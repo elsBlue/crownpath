@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { HeroPortrait } from "@/components/hero-portrait";
 import {
+  EmptyNote,
   FilterChip,
   LetterHead,
   LIST,
@@ -29,6 +30,16 @@ import type { Hero } from "@/lib/e7/types";
 import { cn, daysAgoLabel } from "@/lib/utils";
 
 type KitFilter = "all" | "verified" | "pending";
+
+function rosterEmptyCopy(query: string, onlyBuilt: boolean, kit: KitFilter): string {
+  const bits: string[] = [];
+  if (query.trim()) bits.push(`“${query.trim()}”`);
+  if (onlyBuilt) bits.push("Built only");
+  if (kit === "pending") bits.push("Pending");
+  if (kit === "verified") bits.push("Verified");
+  if (bits.length === 0) return "No heroes in the catalog.";
+  return `No heroes match ${bits.join(" + ")}.`;
+}
 
 function useWide() {
   const [wide, setWide] = useState(() =>
@@ -197,6 +208,24 @@ export function RosterView() {
           </li>
         ))}
       </ul>
+      {list.length === 0 ? (
+        <EmptyNote>
+          {rosterEmptyCopy(query, onlyBuilt, kit)}{" "}
+          {query || onlyBuilt || kit !== "all" ? (
+            <button
+              type="button"
+              className="h-11 text-sm text-foreground underline-offset-4 hover:underline"
+              onClick={() => {
+                setQuery("");
+                setOnlyBuilt(false);
+                setKit("all");
+              }}
+            >
+              Clear filters
+            </button>
+          ) : null}
+        </EmptyNote>
+      ) : null}
       {jumpItems.length > 1 ? <JumpRail items={jumpItems} /> : null}
 
       <Sheet open={Boolean(openHero)} onOpenChange={(open) => !open && setOpenHero(null)}>
@@ -215,7 +244,7 @@ export function RosterView() {
                   </div>
                 </div>
               </SheetHeader>
-              <div className="app-scroll min-h-0 flex-1 px-5 pb-16">
+              <div className="app-scroll min-h-0 flex-1 px-5 pb-4">
                 <FitsKit hero={openHero} />
                 {openHero.kit ? (
                   <div className="mt-6 border-t border-border/80 pt-4">
@@ -223,6 +252,11 @@ export function RosterView() {
                     <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{openHero.kit}</p>
                   </div>
                 ) : null}
+              </div>
+              <div className="shrink-0 border-t border-border/80 px-5 py-3">
+                <Button variant="secondary" className="w-full sm:w-auto" onClick={() => setOpenHero(null)}>
+                  Close
+                </Button>
               </div>
             </>
           ) : null}

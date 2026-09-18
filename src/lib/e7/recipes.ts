@@ -65,10 +65,10 @@ export const RECIPES: Recipe[] = [
       "Ferocious Stand forces single-target skills onto Arunka. Use area injury, or accept hitting her.",
     ],
     slots: [
-      { label: "Injury", tags: ["injury"], prefer: ["empyrean-ilynav", "urban-shadow-choux", "new-moon-luna", "twisted-eidolon-kayron", "lone-crescent-bellona", "monarch-of-the-sword-iseria", "zahhak", "disciplinary-prefect-aria", "death-dealer-ray", "alencia", "abigail"] },
+      { label: "Injury", tags: ["injury"], prefer: ["empyrean-ilynav", "urban-shadow-choux", "new-moon-luna", "twisted-eidolon-kayron", "lone-crescent-bellona", "monarch-of-the-sword-iseria", "zahhak", "estelle", "disciplinary-prefect-aria", "death-dealer-ray", "alencia", "abigail"] },
       { label: "Frontline", roles: ["tank", "bruiser"], prefer: ["dragon-bride-senya", "last-rider-krau", "mort", "dark-corvus", "boss-arunka"] },
       { label: "Tech", tags: ["anti-revive", "strip"], roles: ["soulblock", "strip"], prefer: ["briar-witch-iseria", "hecate", "shepherd-diene", "belian"] },
-      { label: "Sustain", roles: ["healer", "cleanse", "revive"], prefer: ["ruele-of-light", "lisette", "school-nurse-yulha", "maid-chloe", "spirit-eye-celine", "blood-moon-haste", "diene"] },
+      { label: "Sustain", roles: ["healer", "cleanse", "revive"], prefer: ["ruele-of-light", "lisette", "school-nurse-yulha", "maid-chloe", "spirit-eye-celine", "blood-moon-haste", "diene", "destina"] },
     ],
   },
   {
@@ -85,7 +85,7 @@ export const RECIPES: Recipe[] = [
     ],
     slots: [
       { label: "Anti-revive", tags: ["anti-revive"], prefer: ["briar-witch-iseria", "hecate", "bystander-hwayoung"] },
-      { label: "Strip", roles: ["strip"], tags: ["strip"], prefer: ["briar-witch-iseria", "shepherd-diene", "rinak", "frieren", "fallen-cecilia", "witch-of-the-mere-tenebria", "desert-jewel-basar", "abyssal-yufine", "pirate-captain-flan", "ainz-ooal-gown", "requiem-roana", "zio", "mediator-kawerik", "death-dealer-ray", "uncharted-pioneer-politis", "aki", "ae-ningning", "aramintha", "aria", "aubade-ludwig"] },
+      { label: "Strip", roles: ["strip"], tags: ["strip"], prefer: ["briar-witch-iseria", "shepherd-diene", "rinak", "frieren", "fallen-cecilia", "witch-of-the-mere-tenebria", "desert-jewel-basar", "abyssal-yufine", "pirate-captain-flan", "ainz-ooal-gown", "requiem-roana", "zio", "mediator-kawerik", "death-dealer-ray", "uncharted-pioneer-politis", "aki", "ae-ningning", "aramintha", "aria", "aubade-ludwig", "beehoo", "basar", "birgitta", "eda", "eligos", "elphelt", "eye-of-the-abyss-fumyr", "festive-eda", "fumyr"] },
       { label: "Closer", roles: ["dps", "cleave", "bruiser"], prefer: ["straze", "specimen-sez", "little-queen-charlotte", "hecate", "arbiter-vildred", "commander-pavel", "closer-charles", "bystander-hwayoung", "arunka"] },
       { label: "Cover", roles: ["opener", "tank", "control"], prefer: ["genesis-ras", "boss-arunka", "last-rider-krau", "rinak"] },
     ],
@@ -123,7 +123,7 @@ export const RECIPES: Recipe[] = [
     ],
     slots: [
       { label: "Opener", roles: ["opener"], prefer: ["architect-laika", "ran", "faithless-lidica", "lone-wolf-peira", "salome", "rhianna-and-luciella", "archdemons-shadow", "tidal-rift-elvira", "top-model-luluca", "death-dealer-ray", "amid", "aube"] },
-      { label: "Strip", roles: ["strip"], tags: ["strip"], prefer: ["briar-witch-iseria", "faithless-lidica", "ran", "rinak", "frieren", "witch-of-the-mere-tenebria", "desert-jewel-basar", "abyssal-yufine", "rhianna-and-luciella", "pirate-captain-flan", "zio", "mediator-kawerik", "death-dealer-ray", "uncharted-pioneer-politis", "aki", "ae-ningning", "aramintha", "aria", "aubade-ludwig"] },
+      { label: "Strip", roles: ["strip"], tags: ["strip"], prefer: ["briar-witch-iseria", "faithless-lidica", "ran", "rinak", "frieren", "witch-of-the-mere-tenebria", "desert-jewel-basar", "abyssal-yufine", "rhianna-and-luciella", "pirate-captain-flan", "zio", "mediator-kawerik", "death-dealer-ray", "uncharted-pioneer-politis", "aki", "ae-ningning", "aramintha", "aria", "aubade-ludwig", "beehoo", "basar", "birgitta", "eda", "eligos", "elphelt", "eye-of-the-abyss-fumyr", "festive-eda", "fumyr"] },
       { label: "Cleave", roles: ["cleave", "dps"], tags: ["aoe"], prefer: ["architect-laika", "straze", "judge-kise", "arbiter-vildred", "navy-captain-landy", "afternoon-soak-flan", "operator-sigret", "eternal-wanderer-ludwig", "archdemons-shadow", "requiem-roana", "argent-waves-hwayoung"] },
       { label: "Enable", roles: ["soulblock", "cleanse", "dps"], prefer: ["belian", "diene", "conqueror-lilias", "angel-of-light-angelica", "dragon-king-sharun", "sylvan-sage-vivian", "hellion-lua", "mediator-kawerik", "aram"] },
     ],
@@ -142,7 +142,7 @@ export const RECIPES: Recipe[] = [
     ],
     slots: [
       { label: "Immunity", tags: ["immunity"], roles: ["tank"], prefer: ["last-rider-krau", "crimson-armin"] },
-      { label: "Control", roles: ["control"], prefer: ["sage-baal", "rinak", "frieren", "solitaria", "politis", "witch-of-the-mere-tenebria", "silver-blade-aramintha", "specter-tenebria", "hellion-lua", "zio", "ambitious-tywin", "ae-winter", "ae-ningning", "aramintha", "aube", "aubade-ludwig"] },
+      { label: "Control", roles: ["control"], prefer: ["sage-baal", "rinak", "frieren", "solitaria", "politis", "witch-of-the-mere-tenebria", "silver-blade-aramintha", "specter-tenebria", "hellion-lua", "zio", "ambitious-tywin", "ae-winter", "ae-ningning", "aramintha", "aube", "aubade-ludwig", "birgitta", "cerise", "command-model-laika", "dizzy", "fairytale-tenebria", "elphelt", "festive-eda", "fumyr"] },
       { label: "Wincon", roles: ["bruiser", "dps"], prefer: ["empyrean-ilynav", "twisted-eidolon-kayron", "lionheart-cermia", "designer-lilibet", "apocalypse-ravi", "martial-artist-ken"] },
       { label: "Hold", roles: ["tank", "healer", "soulblock", "cleanse"], prefer: ["last-rider-krau", "angel-of-light-angelica", "designer-lilibet", "dragon-bride-senya", "dragon-king-sharun", "desert-jewel-basar", "mediator-kawerik"] },
     ],
@@ -198,8 +198,8 @@ export const RECIPES: Recipe[] = [
       "Belian does not care about a Soulburn follow-up.",
     ],
     slots: [
-      { label: "Strip", tags: ["strip", "ignore-er"], roles: ["strip"], prefer: ["briar-witch-iseria", "judge-kise", "successor-taeyou", "ran", "rinak", "frieren", "witch-of-the-mere-tenebria", "desert-jewel-basar", "abyssal-yufine", "zio", "ainz-ooal-gown", "uncharted-pioneer-politis", "aki", "ae-ningning", "aramintha"] },
-      { label: "Lock", roles: ["control"], prefer: ["solitaria", "ambitious-tywin", "politis", "rinak", "frieren", "witch-of-the-mere-tenebria", "aube", "aubade-ludwig", "aramintha"] },
+      { label: "Strip", tags: ["strip", "ignore-er"], roles: ["strip"], prefer: ["briar-witch-iseria", "judge-kise", "successor-taeyou", "ran", "rinak", "frieren", "witch-of-the-mere-tenebria", "desert-jewel-basar", "abyssal-yufine", "zio", "ainz-ooal-gown", "uncharted-pioneer-politis", "aki", "ae-ningning", "aramintha", "basar", "birgitta", "eda", "eligos", "elphelt", "eye-of-the-abyss-fumyr", "festive-eda", "fumyr"] },
+      { label: "Lock", roles: ["control"], prefer: ["solitaria", "ambitious-tywin", "politis", "rinak", "frieren", "witch-of-the-mere-tenebria", "aube", "aubade-ludwig", "aramintha", "birgitta", "cerise", "command-model-laika", "fairytale-tenebria", "elphelt", "festive-eda", "fumyr"] },
       { label: "Wincon", roles: ["dps", "bruiser", "cleave"], prefer: ["straze", "judge-kise", "little-queen-charlotte", "closer-charles"] },
       { label: "Hold", roles: ["tank", "healer", "opener"], prefer: ["genesis-ras", "last-rider-krau", "ruele-of-light", "dragon-bride-senya", "ambitious-tywin"] },
     ],

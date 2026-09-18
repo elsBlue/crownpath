@@ -125,7 +125,7 @@ export function JumpRail({
     >
       <div
         className={cn(
-          "scout-rail pointer-events-auto flex items-stretch gap-2 py-2 pr-1 pl-5 transition-[opacity,transform] duration-300 ease-[var(--ease-smooth-out)] motion-reduce:transition-none",
+          "scout-rail pointer-events-auto flex min-w-11 items-stretch gap-2 py-2 pr-1 pl-1 transition-[opacity,transform] duration-300 ease-[var(--ease-smooth-out)] motion-reduce:transition-none",
           compact ? "h-full" : "my-auto",
           shown
             ? "translate-x-0 opacity-100"
@@ -137,15 +137,17 @@ export function JumpRail({
           window.clearTimeout(hideTimer.current);
         }}
       >
-        <div className="flex min-h-0 flex-col items-end">
+        <div className={cn("flex min-h-0 min-w-11 flex-col", compact && "h-full")}>
           {items.map((item) => (
             <button
               key={item.id}
               type="button"
+              aria-label={`Jump to ${item.label}`}
+              aria-current={active === item.id ? "true" : undefined}
               onClick={() => go(item.id)}
               className={cn(
-                "flex items-center tracking-wide [-webkit-tap-highlight-color:transparent]",
-                compact ? "flex-1 text-[11px] leading-none" : "min-h-11 text-xs",
+                "flex min-w-11 items-center justify-center px-2 tracking-wide [-webkit-tap-highlight-color:transparent]",
+                compact ? "flex-1 text-xs leading-none" : "min-h-11 text-xs",
                 active === item.id ? "text-foreground" : "text-muted-foreground/70",
               )}
             >

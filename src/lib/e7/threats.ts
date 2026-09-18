@@ -873,7 +873,81 @@ export function wallThreats(heroes: Hero[]): DraftThreat[] {
     add({
       key: "aubade",
       label: "Aubade Ludwig",
-      note: "White Night strips two, then Block and Silence. With Dawn he spends all Souls on Light of Condemnation extra area damage. Extra attack is not Dual Attack.",
+      note: "With Dawn, Light of Condemnation is 1,000–25,000 additional on everyone from Souls spent. White Night strips two, then Block and Silence. Extra attack is not Dual Attack.",
+      answerRoles: ["control"],
+    });
+  }
+  if (ids.has("benimaru") || hasUnique(heroes, "multilayer barrier")) {
+    add({
+      key: "benimaru",
+      label: "Benimaru",
+      note: "An enemy extra turn cleanses him, grants undispellable Multilayer Barrier (+50% Hit, immune to debuffs), and pushes Combat Readiness 25%. Hell Flare at full Fighting Spirit is an extra attack, not Dual Attack: 30% penetrate, 60% with Barrier.",
+      answerRoles: ["control"],
+    });
+  }
+  if (ids.has("celine")) {
+    add({
+      key: "celine",
+      label: "Non-attack punish",
+      note: "A non-attack skill cleanses her, grants 10 Soul, and Blink hits a random unit for Combat Readiness +30%. Open with an attack. Stealth and Evasion are only on herself.",
+    });
+  }
+  if (ids.has("byblis") || hasUnique(heroes, "i'm warning you")) {
+    add({
+      key: "byblis",
+      label: "Counter reaction",
+      note: "When an ally is counterattacked, I'm Warning You cuts enemy buff durations by 2 turns, Decrease Defense, and heals the wall. Buff duration −2 is not a strip.",
+      answerTags: ["strip"],
+    });
+  }
+  if (ids.has("dizzy") || hasUnique(heroes, "emotional gamma ray")) {
+    add({
+      key: "dizzy-miss",
+      label: "Dizzy miss",
+      note: "Emotional Gamma Ray misses the hit, but Decrease Speed, Decrease Attack, and Decrease Hit Chance still land on everyone.",
+    });
+  }
+  if (ids.has("edward-elric") || hasUnique(heroes, "rise!")) {
+    add({
+      key: "edward-rise",
+      label: "Edward Rise",
+      note: "If you hit him while he has a debuff, Rise! strips one and inflicts a random Decrease Attack, Decrease Hit Chance, Provoke, Silence, or Restrict.",
+      answerRoles: ["strip"],
+    });
+  }
+  if (ids.has("elvira")) {
+    add({
+      key: "elvira-immortal",
+      label: "Elvira Immortality",
+      note: "Capturing Sacrifice is Immortality 3 turns and ignores cooldown manip. She cannot die in that window. Exterminate after her basic while Immortal strips one and Beguiles.",
+    });
+  }
+  if (ids.has("fenris") || hasUnique(heroes, "soaring arrow")) {
+    add({
+      key: "fenris",
+      label: "Fenris reaction",
+      note: "After an ally extra attack, counter, or Dual Attack, Soaring Arrow hits everyone, cleanses two, and Combat-Readiness pushes him 30%.",
+    });
+  }
+  if (ids.has("festive-eda") || hasUnique(heroes, "expected outcome")) {
+    add({
+      key: "festa-eda",
+      label: "Festive Eda",
+      note: "Stealth is only on herself — not a miss nest. If she starts a turn without Stealth she full-cleanses, Shyness, then Expected Outcome cuts Combat Readiness 50%.",
+    });
+  }
+  if (ids.has("frida") || hasUnique(heroes, "oasis all-ride pass")) {
+    add({
+      key: "frida-pass",
+      label: "Frida All-Ride",
+      note: "Oasis All-Ride Pass: her first Soulburn and the foremost ally's first Soulburn cost 0 Soul. Aqua Ride is Soulburn, not Dual Attack.",
+    });
+  }
+  if (ids.has("fumyr") || hasUnique(heroes, "fruit of knowledge")) {
+    add({
+      key: "fumyr-fruit",
+      label: "Fumyr Fruit",
+      note: "At full Focus after she attacks, Fruit of Knowledge full-strips everyone, then Sleep and Decrease Defense. Extra turn is Soulburn only. She is not Eye of the Abyss Fumyr.",
     });
   }
   if (hasUnique(heroes, "coastal discipline") || ids.has("aram")) {
@@ -1020,6 +1094,17 @@ export function wallThreats(heroes: Hero[]): DraftThreat[] {
     "aria-stealth": 8,
     arunka: 12,
     aubade: 9,
+    benimaru: 10,
+    celine: 10,
+    byblis: 11,
+    "dizzy-miss": 8,
+    "edward-rise": 10,
+    "elvira-immortal": 9,
+    fenris: 11,
+    "festa-eda": 8,
+    "frida-pass": 10,
+    "fumyr-fruit": 7,
+    "redir-provoke": 8,
     collapse: 8,
     salome: 8,
     "nm-luna": 8,

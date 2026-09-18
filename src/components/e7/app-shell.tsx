@@ -4,10 +4,12 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { signOut } from "@/lib/auth/client";
 import { useCurrentUser } from "@/lib/auth/use-current-user";
 import { isOwnerIdentity } from "@/lib/e7/owner";
+import { useNotices } from "@/lib/e7/notices";
 import { useArenaStore } from "@/lib/e7/store";
 import { cn } from "@/lib/utils";
 import { Brand } from "./brand";
 import { Starfield } from "./starfield";
+import { UpdateInbox } from "./update-inbox";
 
 const NAV = [
   { to: "/", label: "Scout", icon: Crosshair },
@@ -53,7 +55,8 @@ export function AppShell({ children }: { children: ReactNode }) {
               );
             })}
           </nav>
-          <div className="flex min-w-0 items-center gap-3">
+          <div className="flex min-w-0 items-center gap-1">
+            <UpdateInbox />
             <AccountChip />
           </div>
         </div>
@@ -165,6 +168,7 @@ function AccountChip() {
                 setSigningOut(true);
                 setOpen(false);
                 useArenaStore.getState().resetSession();
+                useNotices.getState().reset();
                 void signOut("/login").catch(() => setSigningOut(false));
               }}
               className="inline-flex h-11 items-center gap-2 rounded-md px-3 text-sm text-loss hover:bg-secondary disabled:opacity-60"

@@ -101,10 +101,10 @@ export function LogView() {
               {rate === null ? "—" : `${rate}%`}
             </p>
             <p className="text-sm text-muted-foreground">
-              {matches.length === 0 ? "No fights yet" : `${wins}W · ${matches.length - wins}L`}
+              {matches.length === 0 ? "No fights on this device yet" : `${wins}W · ${matches.length - wins}L`}
             </p>
             <p className="text-xs text-muted-foreground">
-              Past fights only. Scout no longer records new ones.
+              Personal list. Scout no longer records new ones. Guild totals from older logs live under Admin → Stats.
             </p>
           </CardContent>
         </Card>

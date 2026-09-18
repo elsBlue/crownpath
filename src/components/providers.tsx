@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { getArena, getCatalog } from "@/lib/e7/api";
 import { useCatalog } from "@/lib/e7/catalog";
+import { useNotices } from "@/lib/e7/notices";
 import { useArenaStore } from "@/lib/e7/store";
 
 function HydrateArena() {
@@ -13,9 +14,11 @@ function HydrateArena() {
     if (isPending) return;
     if (!user) {
       useArenaStore.getState().resetSession();
+      useNotices.getState().reset();
       return;
     }
     let cancelled = false;
+    void useNotices.getState().refresh();
     Promise.all([getCatalog(), getArena()])
       .then(([catalog, arena]) => {
         if (cancelled) return;

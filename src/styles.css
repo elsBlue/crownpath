@@ -162,11 +162,10 @@
 }
 
 .scout-rail {
-  background: color-mix(in oklab, var(--color-background) 42%, transparent);
+  background: color-mix(in oklab, var(--color-background) 72%, transparent);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
-  mask-image: linear-gradient(to left, #000 0%, #000 70%, transparent 100%);
-  -webkit-mask-image: linear-gradient(to left, #000 0%, #000 70%, transparent 100%);
+  border-radius: 999px;
 }
 
 .counter-fold {

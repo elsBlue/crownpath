@@ -453,6 +453,86 @@ function jobFor(
         : `${n} ignores damage sharing on her third skill. That skill starts the first fight on cooldown; the passive is the point.`;
     case "belian":
       return `${n} removes soul gain. Play the rest of this draft without Soulburn.`;
+    case "beehoo":
+      return `${n} strips two, then Cannot Buff and Burn. Incinerate detonates Burn on his turn and cannot Dual Attack — Soulburn is cooldown, not an extra turn.`;
+    case "baal-and-sezan":
+      return `${n} Poisons two, then Dark Cloud scales with debuff count and resets Last Requiem on a kill. Last Requiem is Unhealable, Decrease Defense, and Decrease Speed.`;
+    case "baiken":
+      return `${n} stacks Bleed; Tsurane puts three (one ignores Effect Resistance) and extra-turns on a crit. Garyo Tensei detonates Bleeds at end of turn and Combat-Readiness pushes the team on a crit.`;
+    case "basar":
+      return `${n} is the area strip: Sandstorm dispels all buffs, then Cannot Buff for two turns and cuts Combat Readiness 30%. Soulburn ignores Effect Resistance.`;
+    case "bellona":
+      return `${n} is area Decrease Defense. At 5 Focus, Windbreak Fan consumes Focus and casts Razorwind Fan — that extra attack is not Dual Attack. Soulburn is an extra turn.`;
+    case "benimaru":
+      return `${n} Decrease-Defenses, then Hell Flare at full Fighting Spirit — 30% penetrate, 60% with Multilayer Barrier. An enemy extra turn cleanses him, grants Multilayer Barrier, and pushes Combat Readiness 25%.`;
+    case "bomb-model-kanna":
+      return `${n} strips one, then Increase Speed on all allies and Increase Attack on herself. Shelling Stance is +40% Effectiveness while Full Bombardment is ready.`;
+    case "cecilia":
+      return `${n} Decrease-Attacks and strips one, then Provokes and grants team Immunity. Barrier and damage scale with her max Health.`;
+    case "birgitta":
+      return `${n} strips all, then Bind and Block 2 turns. Soulburn ignores Effect Resistance. Subterfuge cleanses two, Swift Attack, Combat Readiness +35%, extra turn. Block is not Seal and not Cannot Buff.`;
+    case "blooming-lidica":
+      return `${n} Thorned Vine after an ally hits a debuffed target: buff duration −1 and Cannot Buff 2 turns — not a strip. Fruit of Ecstasy grants Skill Nullifier once to all allies. Penetrate 50%, up to 100% if faster. Cannot crit.`;
+    case "brieg":
+      return `${n} grants team Barrier and undispellable Perception, then extra-turns. Limitless Sword Arts strips all, Decrease Defense and Decrease Speed. Full Fighting Spirit after S1 extra-attacks that — extra attack, not Dual Attack.`;
+    case "byblis":
+      return `${n} A Larunda's Hospitality is buff duration −1, Decrease Hit Chance, and 10 Soul Removal — not a strip. When an ally is counterattacked, I'm Warning You cuts two buff durations.`;
+    case "celine":
+      return `${n} Blink after an enemy non-attack skill: cleanse, +10 Soul, Combat Readiness +30%. Thunderclap ignores damage sharing. Stealth and Evasion are only on herself.`;
+    case "cerise":
+      return `${n} Luminous Explosion is Stun and Cannot Buff. Frost Storm Restricts Combat Readiness other than Speed, Decrease-Speeds, then Invincible 1 turn. Soulburn ignores Effect Resistance.`;
+    case "charles":
+      return `${n} Slash 65% dispels one, then 50% extra-attacks Smash (100% with three or more buffs) — extra attack, not Dual Attack. Faithful Strike is team Increase Attack, Increase Defense, and Counterattack on himself.`;
+    case "charlotte":
+      return `${n} Dual Swords always crits. If she has a buff and it is not a Dual Attack, it hits everyone. Vortex is Unhealable and penetrates the highest Defense. While buffed, +50% damage and 50% damage reduction.`;
+    case "cermia":
+      return `${n} Hot Streak grants Increase Attack (Greater), resets All-In, extra turn. All-In penetrates 50%. Extra turn is S2, not Soulburn.`;
+    case "chloe":
+      return `${n} Magic Bolt is Increase Attack, Magic Nail, Combat Readiness +50%, and ignores Effect Resistance. Hyper Strike Stuns; ignores Effect Resistance if the target is nailed.`;
+    case "choux":
+      return `${n} Fwoooosh! penetrates 70%. At 5 Focus it consumes Focus, deals more, and resets. Extra turn is Soulburn only.`;
+    case "command-model-laika":
+      return `${n} Strike Order is Target, Increase Attack (Greater) on the highest-Attack ally, Dual Attack. Volley Fire is Decrease Speed and Sleep, then team Immunity.`;
+    case "destina":
+      return `${n} Destina's Grace revives all dead to 30% Health and full-cleanses the living. Spirit's Blessing is self-only undispellable Effect Resistance +60%.`;
+    case "dizzy":
+      return `${n} Emotional Gamma Ray misses the hit but still inflicts Decrease Speed, Decrease Attack, and Decrease Hit Chance. Extra turn is Soulburn only.`;
+    case "eda":
+      return `${n} Cold Snap strips two, cuts Combat Readiness, and grants Skill Nullifier once on herself. Extra turn is Soulburn only.`;
+    case "edward-elric":
+      return `${n} Rise! after you hit him while he has a debuff: strip one, a random debuff, Combat Readiness +20%. His third skill ignores damage sharing vs non-boss.`;
+    case "elena":
+      return `${n} Consecrated Ground heals everyone after an area attack. Eternally Shining Comet cleanses one, Invincible 1 turn, Increase Effect Resistance 2 turns.`;
+    case "eligos":
+      return `${n} Cloak and Trigger is resource −60%, strip two, Target and Decrease Defense, Combat Readiness −35%. Soulburn ignores Effect Resistance.`;
+    case "elphelt":
+      return `${n} Magnum Wedding strips two, Sleep and Decrease Defense, then extra-turns. Barrage is Cannot Buff, not Seal.`;
+    case "elvira":
+      return `${n} Capturing Sacrifice strips all, Unhealable and Decrease Defense, Immortality 3 turns, and ignores cooldown manip. Extra turn is Soulburn only.`;
+    case "emilia":
+      return `${n} Spirit's Blessing cleanses two, Increase Attack, Combat Readiness +40% on an ally. Divine Protection cleanses two from everyone, heals, Barrier.`;
+    case "ervalen":
+      return `${n} Heir to the Throne is Counterattack and Barrier; a kill extra-turns and extends buffs. Extra turn is on a kill, not turn 1.`;
+    case "estelle":
+      return `${n} injuries on Shield Strike and Dazzling Strike, always crits. Protective Nature is 30% share; she is not the default tank.`;
+    case "eye-of-the-abyss-fumyr":
+      return `${n} Blue Despair strips two and extra-turns. Eye of the Abyss Detains the foremost Hero and ignores Effect Resistance.`;
+    case "fairytale-tenebria":
+      return `${n} Tea Party strips one, Cannot Buff, Redirected Provoke. Extra turn is Soulburn only.`;
+    case "fenne":
+      return `${n} injures herself, not the enemy, then heals the team. Love=Pain is a once-per-battle self-revive to 30% Health. That is not team revive.`;
+    case "fenris":
+      return `${n} Soaring Arrow after an ally extra attack, counter, or Dual Attack: hits everyone, cleanses two, Combat Readiness +30%. Strike of Fate is Increase Attack (Greater) and team Combat Readiness +30%.`;
+    case "fern":
+      return `${n} Release penetrates 70% and Speed-scales. That third skill starts the first battle on full cooldown. Self evasion is not a miss nest.`;
+    case "festive-eda":
+      return `${n} Let Me Give It a Try strips two, Decrease Defense, Silence. If Stealth is off at turn start she cleanses and Expected Outcome cuts Combat Readiness 50%. Self Stealth is not a miss nest.`;
+    case "flan":
+      return `${n} Advantageous Deal is skill cooldown +1, Decrease Defense, Combat Readiness −15%. Data Monopoly is Increase Attack, Increase Critical Hit Damage, Combat Readiness +30%. Extra turn is Soulburn only.`;
+    case "frida":
+      return `${n} Oasis All-Ride Pass: her first Soulburn and the foremost ally's first Soulburn cost 0. Oasis Land cleanses one, Combat Readiness +15%, Increase Attack.`;
+    case "fumyr":
+      return `${n} Fruit of Knowledge at full Focus: full strip, Sleep, Decrease Defense. Sensory Dissection strips two, cooldown +1, Combat Readiness −40%. Extra turn is Soulburn only.`;
     case "shepherd-diene":
       return `${n} strips when anyone Soulburns.`;
     case "architect-laika":
@@ -608,7 +688,7 @@ function jobFor(
     case "arunka":
       return `${n} is the barrier check. Expose is an extra attack, not Dual Attack. Thrashing Extinction applies only if that skill kills.`;
     case "aubade-ludwig":
-      return `${n} strips two, then Block and Silence. With Dawn, Light of Condemnation spends all Souls for extra area damage. Extra attack is not Dual Attack.`;
+      return `${n} strips two, then Block and Silence. With Dawn, Light of Condemnation is 1,000–25,000 additional on everyone from Souls spent. Extra attack is not Dual Attack.`;
     case "aube":
       return `${n} grants Cascade and Skill Nullifier, then extra-turns. Eternal Moment strips two, then Immobilize and Restrict. Concealment is not Illusion — area skills still hit her.`;
     default:
@@ -711,6 +791,34 @@ function pitfallsFor(picks: { label: string; hero: Hero }[], read: DefenseRead):
     push(
       0,
       "The extra-turn third skill hits everyone even on miss. Evasion does not save you. If a second DPS follows, the fight is over.",
+    );
+  }
+  if (read.watch.some((t) => t.key === "aubade")) {
+    push(
+      1,
+      "Light of Condemnation is 1,000–25,000 additional on everyone from Souls spent. Stun that turn or kill him before Dawn stacks Souls.",
+    );
+  }
+  if (read.watch.some((t) => t.key === "benimaru")) {
+    push(
+      1,
+      filled.some(
+        (h) =>
+          h.tags.includes("extra-turn") ||
+          (h.effects ?? []).includes("extra-turn") ||
+          h.roles.includes("opener"),
+      )
+        ? "Your extra turn cleanses Benimaru, grants Multilayer Barrier, and pushes Combat Readiness 25%. Do not extra-turn into him."
+        : "An extra turn on your side cleanses him and grants Multilayer Barrier. Hell Flare then penetrates 60%.",
+    );
+  }
+  if (read.watch.some((t) => t.key === "celine")) {
+    push(1, "A non-attack skill into Celine Blink-cleanses her and Combat-Readiness pushes 30%. Open with an attack.");
+  }
+  if (read.watch.some((t) => t.key === "byblis") && filled.some((h) => h.tags.includes("counter"))) {
+    push(
+      1,
+      "Your counters fire I'm Warning You: buff duration −2 and Decrease Defense on you. That is not a strip.",
     );
   }
 
@@ -1022,6 +1130,24 @@ function whyFor(recipe: Recipe, read: DefenseRead, filled: Hero[]): string[] {
         ? "They extra-turn into a third skill that hits even on miss. If a second DPS follows, slow units do not get a turn."
         : "They extra-turn on the first cycle. Survive or contest that before the rest of the wall matters.",
     );
+  }
+  if (read.watch.some((t) => t.key === "benimaru")) {
+    why.push(
+      filled.some(
+        (h) =>
+          h.tags.includes("extra-turn") ||
+          (h.effects ?? []).includes("extra-turn") ||
+          h.roles.includes("opener"),
+      )
+        ? "Your extra turn cleanses Benimaru and grants Multilayer Barrier. Do not extra-turn into him."
+        : "An extra turn on your side cleanses him, grants Multilayer Barrier, and Hell Flare at full Fighting Spirit penetrates 60% with it.",
+    );
+  }
+  if (read.watch.some((t) => t.key === "celine")) {
+    why.push("A non-attack skill into Celine Blink-cleanses her. Open with an attack.");
+  }
+  if (read.watch.some((t) => t.key === "byblis") && filled.some((h) => h.tags.includes("counter"))) {
+    why.push("Your counters fire I'm Warning You. Buff duration −2 is not a strip.");
   }
   if (
     names.has("harsetti") &&
@@ -1495,6 +1621,8 @@ function whyFor(recipe: Recipe, read: DefenseRead, filled: Hero[]): string[] {
       "spec-tene":
         "Area attacks still hit Specter Tenebria. Single-target skills cannot select her while an ally lives.",
       ainz: "Death Sentence is 50,000 at the twelfth turn and falls off if he dies.",
+      aubade:
+        "With Dawn, Light of Condemnation is 1,000–25,000 additional on everyone. Kill him before the dump, or stun that turn.",
       "rq-roana":
         "Combat Readiness from Speed is halved. Do not win this as a Speed race.",
       seal: "Seal turns passives off. Do not lean on a buffed opener.",

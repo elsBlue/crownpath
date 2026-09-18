@@ -16,6 +16,8 @@
     "preview:stop": "node scripts/preview.mjs stop",
     "typecheck": "tsc --noEmit",
     "check:e7": "node scripts/guard-e7-core.mjs",
+    "ingest:extract": "node scripts/extract-kits.mjs",
+    "ingest:apply": "node scripts/apply-hero-drafts.mjs",
     "check:auth": "node scripts/check-auth-invariant.mjs",
     "test": "node --test 'scripts/**/*.test.mjs' && node --experimental-strip-types --test src/lib/auth/gate-identity.test.ts",
     "lint": "eslint .",

@@ -100,6 +100,25 @@ export function RowCard({
   );
 }
 
+export function EmptyNote({
+  children,
+  className,
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <div
+      className={cn(
+        "rounded-xl bg-card px-4 py-5 text-sm leading-relaxed text-muted-foreground shadow-[var(--shadow-border)]",
+        className,
+      )}
+    >
+      {children}
+    </div>
+  );
+}
+
 export const PAGE = "flex flex-col gap-5";
 export const TOOLBAR = "flex flex-wrap items-center gap-2";
 export const LIST = "flex flex-col gap-1";

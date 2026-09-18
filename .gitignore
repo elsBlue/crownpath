@@ -3,6 +3,9 @@ node_modules/
 .github_repo
 .env
 .env.*
+.grok/secrets.json
+drafts/*.json
+!drafts/.gitkeep
 dist/
 .output/
 .vercel/

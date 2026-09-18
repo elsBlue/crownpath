@@ -1,6 +1,6 @@
 import { pendingMigrations } from "../../scripts/migration-plan.mjs";
 
-/** Which database backend is active. */
+/** Which database backend is active. Migrations live in /migrations/*.sql. */
 export type DbSource = "neon" | "pglite";
 
 // An empty/whitespace DATABASE_URL (an easy misconfig in deploy UIs) must mean
@@ -185,7 +185,8 @@ async function createSql(): Promise<Sql> {
  *
  * Schema comes from `migrations/*.sql`, auto-applied before the first query on
  * both backends — define tables there, never inline in server functions.
- * Adding a file under migrations/ is picked up on the next migrate pass.
+ * Adding a file under migrations/ is picked up on the next migrate pass
+ * (HMR reload of this module, or a process restart).
  */
 export function getSql(): Promise<Sql> {
   sqlPromise ??= createSql().catch((err) => {

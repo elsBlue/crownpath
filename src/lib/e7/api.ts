@@ -8,6 +8,7 @@ import type { ScoutMode } from "./formation";
 import { isOwnerIdentity } from "./owner";
 import { DEFAULT_VP } from "./ranks";
 import { ARCHETYPE_META, PRESET_DEFENSES, RECIPES } from "./recipes";
+import { BATCH_MAX, PREFER_SLOTS, type HeroDraft } from "./ingest";
 import type {
   ArchetypeId,
   DefensePreset,
@@ -25,6 +26,8 @@ import type {
   StrategyIdeaStatus,
   UniqueEffect,
   WallStat,
+  Notice,
+  NoticeKind,
 } from "./types";
 
 export class ForbiddenError extends Error {
@@ -276,6 +279,11 @@ async function ensureCatalog() {
         verified = true,
         checked_at = ${hero.checkedAt ?? todayStamp()}
       where id = ${hero.id}
+        and (
+          verified = false
+          or checked_at is null
+          or checked_at < ${hero.checkedAt ?? todayStamp()}
+        )
     `;
   }
   for (const h of HEROES) {
@@ -494,6 +502,14 @@ function eventSummary(action: string, names: string[]): string {
       return many ? `Reviewed ideas · ${list}` : `Reviewed idea · ${list}`;
     case "idea.delete":
       return many ? `Removed ideas · ${list}` : `Removed idea · ${list}`;
+    case "notice.save":
+      return many ? `Updated notices · ${list}` : `Updated notice · ${list}`;
+    case "notice.delete":
+      return many ? `Removed notices · ${list}` : `Removed notice · ${list}`;
+    case "ingest.extract":
+      return many ? `Extracted kits · ${list}` : `Extracted kit · ${list}`;
+    case "ingest.apply":
+      return many ? `Ingested units · ${list}` : `Ingested unit · ${list}`;
     default:
       return list || action;
   }
@@ -1244,3 +1260,422 @@ export const deleteStrategyIdea = createServerFn({ method: "POST" })
     });
     return loadIdeas();
   });
+
+const NOTICE_KINDS: NoticeKind[] = ["catalog", "scout", "app"];
+
+function noticeKind(value: unknown): NoticeKind {
+  const s = String(value);
+  return NOTICE_KINDS.includes(s as NoticeKind) ? (s as NoticeKind) : "catalog";
+}
+
+function noticeFromRow(
+  row: {
+    id: string;
+    kind: unknown;
+    title: string;
+    body: string;
+    published: unknown;
+    author_id: string;
+    at: string | number | Date;
+    read?: unknown;
+  },
+  author: string,
+): Notice {
+  return {
+    id: row.id,
+    kind: noticeKind(row.kind),
+    title: row.title,
+    body: row.body ?? "",
+    published: Boolean(row.published),
+    author,
+    at: Number(row.at ?? Date.now()),
+    read: Number(row.read) === 1,
+  };
+}
+
+async function loadLiveNotices(userId: string): Promise<Notice[]> {
+  const sql = await getSql();
+  const rows = await sql<{
+    id: string;
+    kind: string;
+    title: string;
+    body: string;
+    published: boolean;
+    author_id: string;
+    at: string | number | Date;
+    read: number;
+  }>`
+    select n.id, n.kind, n.title, n.body, n.published, n.author_id,
+      (extract(epoch from n.created_at) * 1000)::bigint as at,
+      case when r.user_id is not null then 1 else 0 end as read
+    from notices n
+    left join notice_reads r on r.notice_id = n.id and r.user_id = ${userId}
+    where n.published = true
+    order by n.created_at desc
+    limit 40
+  `;
+  const labels = new Map<string, string>();
+  for (const id of new Set(rows.map((r) => r.author_id))) {
+    labels.set(id, await actorLabel(id));
+  }
+  return rows.map((r) => noticeFromRow(r, labels.get(r.author_id) || "Admin"));
+}
+
+async function loadAdminNotices(): Promise<Notice[]> {
+  const sql = await getSql();
+  const rows = await sql<{
+    id: string;
+    kind: string;
+    title: string;
+    body: string;
+    published: boolean;
+    author_id: string;
+    at: string | number | Date;
+  }>`
+    select id, kind, title, body, published, author_id,
+      (extract(epoch from created_at) * 1000)::bigint as at
+    from notices
+    order by created_at desc
+    limit 40
+  `;
+  const labels = new Map<string, string>();
+  for (const id of new Set(rows.map((r) => r.author_id))) {
+    labels.set(id, await actorLabel(id));
+  }
+  return rows.map((r) => noticeFromRow({ ...r, read: true }, labels.get(r.author_id) || "Admin"));
+}
+
+export const listNotices = createServerFn({ method: "GET" })
+  .middleware([authMiddleware])
+  .handler(async ({ context }): Promise<Notice[]> => {
+    await ensureProfile(context.userId);
+    return loadLiveNotices(context.userId);
+  });
+
+export const markNoticeRead = createServerFn({ method: "POST" })
+  .middleware([authMiddleware])
+  .validator(z.object({ id: z.string().min(1).max(64) }))
+  .handler(async ({ context, data }) => {
+    await ensureProfile(context.userId);
+    const sql = await getSql();
+    await sql`
+      insert into notice_reads (notice_id, user_id)
+      select id, ${context.userId} from notices
+      where id = ${data.id} and published = true
+      on conflict do nothing
+    `;
+    return loadLiveNotices(context.userId);
+  });
+
+export const markAllNoticesRead = createServerFn({ method: "POST" })
+  .middleware([authMiddleware])
+  .handler(async ({ context }) => {
+    await ensureProfile(context.userId);
+    const sql = await getSql();
+    await sql`
+      insert into notice_reads (notice_id, user_id)
+      select id, ${context.userId} from notices where published = true
+      on conflict do nothing
+    `;
+    return loadLiveNotices(context.userId);
+  });
+
+export const listAdminNotices = createServerFn({ method: "GET" })
+  .middleware([authMiddleware])
+  .handler(async ({ context }): Promise<Notice[]> => {
+    await requireAdmin(context.userId);
+    return loadAdminNotices();
+  });
+
+export const saveNotice = createServerFn({ method: "POST" })
+  .middleware([authMiddleware])
+  .validator(
+    z.object({
+      id: z.string().max(64).optional(),
+      kind: z.enum(["catalog", "scout", "app"]),
+      title: z.string().trim().min(3).max(80),
+      body: z.string().trim().min(8).max(2000),
+      published: z.boolean(),
+    }),
+  )
+  .handler(async ({ context, data }) => {
+    await requireAdmin(context.userId);
+    const sql = await getSql();
+    const id = data.id?.trim() || crypto.randomUUID();
+    const existing = await sql<{ id: string }>`select id from notices where id = ${id}`;
+    if (existing[0]) {
+      await sql`
+        update notices
+        set kind = ${data.kind},
+            title = ${data.title},
+            body = ${data.body},
+            published = ${data.published},
+            updated_at = now()
+        where id = ${id}
+      `;
+    } else {
+      await sql`
+        insert into notices (id, author_id, kind, title, body, published)
+        values (${id}, ${context.userId}, ${data.kind}, ${data.title}, ${data.body}, ${data.published})
+      `;
+    }
+    await recordAdminEvent(context.userId, "notice.save", { id, name: data.title });
+    return loadAdminNotices();
+  });
+
+export const deleteNotice = createServerFn({ method: "POST" })
+  .middleware([authMiddleware])
+  .validator(z.object({ id: z.string().min(1).max(64) }))
+  .handler(async ({ context, data }) => {
+    await requireAdmin(context.userId);
+    const sql = await getSql();
+    const prev = await sql<{ title: string }>`select title from notices where id = ${data.id}`;
+    if (!prev[0]) throw new Error("Notice not found");
+    await sql`delete from notice_reads where notice_id = ${data.id}`;
+    await sql`delete from notices where id = ${data.id}`;
+    await recordAdminEvent(context.userId, "notice.delete", {
+      id: data.id,
+      name: prev[0].title,
+    });
+    return loadAdminNotices();
+  });
+
+export const draftNoticeFromLog = createServerFn({ method: "GET" })
+  .middleware([authMiddleware])
+  .handler(async ({ context }): Promise<string> => {
+    await requireAdmin(context.userId);
+    const sql = await getSql();
+    const rows = await sql<{ action: string; targets: unknown }>`
+      select action, targets from admin_events
+      where updated_at > now() - interval '24 hours'
+        and action in (
+          'unit.create', 'unit.update', 'unit.delete',
+          'recipe.save', 'recipe.delete',
+          'wall.save', 'wall.delete'
+        )
+      order by updated_at desc
+      limit 20
+    `;
+    const lines: string[] = [];
+    const seen = new Set<string>();
+    for (const r of rows) {
+      const names = parseJson<EventTarget[]>(r.targets, [])
+        .map((t) => t.name)
+        .filter(Boolean);
+      const line = eventSummary(r.action, names);
+      if (!line || seen.has(line)) continue;
+      seen.add(line);
+      lines.push(line);
+    }
+    return lines.join("\n");
+  });
+
+const GROQ_SETTING = "groq_api_key";
+
+async function readGroqKey(): Promise<string> {
+  const { readLocalGroqKey } = await import("./ingest-groq.server");
+  const local = readLocalGroqKey();
+  if (local) return local;
+  const sql = await getSql();
+  const rows = await sql<{ value: string }>`select value from owner_settings where key = ${GROQ_SETTING}`;
+  return rows[0]?.value?.trim() || "";
+}
+
+function draftId(batchDate: string, heroId: string) {
+  return `${batchDate}:${heroId}`;
+}
+
+const draftSchema = z.object({
+  id: z.string().min(1).max(64).regex(/^[a-z0-9-]+$/),
+  name: z.string().min(1).max(80),
+  short: z.string().min(1).max(24),
+  element: z.enum(["fire", "ice", "earth", "light", "dark"]),
+  class: z.enum(["knight", "warrior", "mage", "ranger", "thief", "soulweaver"]),
+  tier: z.enum(["SS", "S", "A", "B"]),
+  rarity: z.union([z.literal(3), z.literal(4), z.literal(5)]),
+  roles: z.array(z.string()).max(12),
+  tags: z.array(z.string()).max(20),
+  effects: z.array(z.string()).max(30),
+  buffs: z.array(z.string().max(48)).max(20),
+  debuffs: z.array(z.string().max(48)).max(20),
+  uniqueEffects: z.array(z.object({ name: z.string().min(1).max(80), text: z.string().max(400) })).max(12),
+  kit: z.string().min(1).max(800),
+  jobFor: z.string().max(400),
+  watch: z.object({ key: z.string().min(1).max(40), label: z.string().max(40), note: z.string().max(280) }).nullable(),
+  prefer: z.array(z.enum(PREFER_SLOTS)).max(4),
+  applyWatch: z.boolean(),
+  flags: z.array(z.string()).max(12),
+  sourceKit: z.string().max(8000),
+  baseSpeed: z.number().int().min(70).max(160).optional(),
+  defense: z.number().int().min(0).max(10),
+  offense: z.number().int().min(0).max(10),
+  verified: z.literal(true),
+  checkedAt: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  matched: z.boolean(),
+});
+
+export const ingestKeyStatus = createServerFn({ method: "GET" })
+  .middleware([authMiddleware])
+  .handler(async ({ context }) => {
+    await requireAdmin(context.userId);
+    const key = await readGroqKey();
+    return { configured: key.length > 0 };
+  });
+
+export const setIngestKey = createServerFn({ method: "POST" })
+  .middleware([authMiddleware])
+  .validator(z.object({ key: z.string().max(200) }))
+  .handler(async ({ context, data }) => {
+    await requireOwner(context.userId);
+    const key = data.key.trim();
+    if (key && !key.startsWith("gsk_")) throw new Error("Groq keys start with gsk_");
+    const sql = await getSql();
+    if (key) {
+      await sql`
+        insert into owner_settings (key, value, updated_at)
+        values (${GROQ_SETTING}, ${key}, now())
+        on conflict (key) do update set value = excluded.value, updated_at = now()
+      `;
+    } else {
+      await sql`delete from owner_settings where key = ${GROQ_SETTING}`;
+    }
+    const { writeLocalGroqKey } = await import("./ingest-groq.server");
+    try {
+      writeLocalGroqKey(key);
+    } catch {
+      /* sandbox snapshot may be read-only; DB is enough */
+    }
+    return { configured: Boolean(key) };
+  });
+
+export const listDrafts = createServerFn({ method: "GET" })
+  .middleware([authMiddleware])
+  .handler(async ({ context }): Promise<HeroDraft[]> => {
+    await requireAdmin(context.userId);
+    const sql = await getSql();
+    const rows = await sql<{ payload: unknown }>`
+      select payload from hero_drafts where status = 'pending' order by updated_at desc limit 20
+    `;
+    return rows.map((r) => r.payload as HeroDraft);
+  });
+
+export const extractKits = createServerFn({ method: "POST" })
+  .middleware([authMiddleware])
+  .validator(
+    z.object({
+      text: z.string().min(20).max(40000),
+      checkedAt: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+      mode: z.enum(["kit", "json"]).default("kit"),
+    }),
+  )
+  .handler(async ({ context, data }): Promise<{ heroes: HeroDraft[]; model?: string; checkedAt: string }> => {
+    await requireAdmin(context.userId);
+    const checkedAt = data.checkedAt || todayStamp();
+    const { catalogIndex } = await import("./ingest-groq.server");
+    const { normalizeDraft, parseDraftPayload } = await import("../../../scripts/ingest-lib.mjs");
+    const catalog = catalogIndex();
+    let heroes: HeroDraft[];
+    let model: string | undefined;
+    if (data.mode === "json") {
+      const parsed = parseDraftPayload(data.text);
+      heroes = parsed.heroes.slice(0, BATCH_MAX).map((h: unknown) => normalizeDraft(h, catalog, checkedAt));
+    } else {
+      const key = await readGroqKey();
+      if (!key) throw new Error("Add a Groq API key on this tab first.");
+      const { extractKitsWithGroq } = await import("./ingest-groq.server");
+      const result = await extractKitsWithGroq(data.text, checkedAt, key);
+      heroes = result.heroes;
+      model = result.model;
+    }
+    if (!heroes.length) throw new Error("No heroes in that paste.");
+    const sql = await getSql();
+    for (const hero of heroes) {
+      const id = draftId(hero.checkedAt, hero.id || "unmatched");
+      await sql`
+        insert into hero_drafts (id, batch_date, hero_id, payload, status, updated_at)
+        values (${id}, ${hero.checkedAt}, ${hero.id || "unmatched"}, ${JSON.stringify(hero)}::jsonb, 'pending', now())
+        on conflict (id) do update set payload = excluded.payload, status = 'pending', updated_at = now()
+      `;
+    }
+    await recordAdminEvent(context.userId, "ingest.extract", {
+      id: checkedAt,
+      name: heroes.map((h) => h.short || h.name).join(", "),
+    });
+    return { heroes, model, checkedAt };
+  });
+
+export const applyDrafts = createServerFn({ method: "POST" })
+  .middleware([authMiddleware])
+  .validator(z.object({ heroes: z.array(draftSchema).min(1).max(BATCH_MAX) }))
+  .handler(async ({ context, data }) => {
+    await requireAdmin(context.userId);
+    const unmatched = data.heroes.filter((h) => !h.matched || !h.id);
+    if (unmatched.length) {
+      throw new Error(`Match these names to a catalog id first: ${unmatched.map((h) => h.name).join(", ")}`);
+    }
+    const sql = await getSql();
+    const { applyDraftsToRoot } = await import("../../../scripts/ingest-lib.mjs");
+    const { mkdirSync, writeFileSync } = await import("node:fs");
+    const { join } = await import("node:path");
+    const checkedAt = data.heroes[0]!.checkedAt;
+    const dir = join(process.cwd(), "drafts");
+    try {
+      mkdirSync(dir, { recursive: true });
+      writeFileSync(
+        join(dir, `${checkedAt}.json`),
+        JSON.stringify({ checkedAt, heroes: data.heroes }, null, 2) + "\n",
+      );
+    } catch {
+      /* deployed FS is read-only; DB + catalog upsert still run */
+    }
+    let sourceError = "";
+    try {
+      applyDraftsToRoot(process.cwd(), { heroes: data.heroes }, {});
+    } catch (err) {
+      sourceError = err instanceof Error ? err.message : "Source apply failed";
+    }
+    for (const hero of data.heroes) {
+      await sql`
+        insert into heroes (id, name, short, element, class, tier, roles, tags, effects, buffs, debuffs, unique_effects, kit, defense, offense, base_speed, icon, sort_order, verified, checked_at, rarity)
+        values (
+          ${hero.id}, ${hero.name}, ${hero.short}, ${hero.element}, ${hero.class}, ${hero.tier},
+          ${JSON.stringify(hero.roles)}::jsonb, ${JSON.stringify(hero.tags)}::jsonb,
+          ${JSON.stringify(hero.effects ?? [])}::jsonb,
+          ${JSON.stringify(hero.buffs ?? [])}::jsonb,
+          ${JSON.stringify(hero.debuffs ?? [])}::jsonb,
+          ${JSON.stringify(hero.uniqueEffects ?? [])}::jsonb,
+          ${hero.kit}, ${hero.defense}, ${hero.offense}, ${hero.baseSpeed ?? null}, ${""}, 0, true,
+          ${hero.checkedAt}, ${hero.rarity}
+        )
+        on conflict (id) do update set
+          name = excluded.name,
+          short = excluded.short,
+          element = excluded.element,
+          class = excluded.class,
+          tier = excluded.tier,
+          rarity = excluded.rarity,
+          roles = excluded.roles,
+          tags = excluded.tags,
+          effects = excluded.effects,
+          buffs = excluded.buffs,
+          debuffs = excluded.debuffs,
+          unique_effects = excluded.unique_effects,
+          kit = excluded.kit,
+          defense = excluded.defense,
+          offense = excluded.offense,
+          base_speed = excluded.base_speed,
+          verified = true,
+          checked_at = excluded.checked_at
+      `;
+      const id = draftId(hero.checkedAt, hero.id);
+      await sql`
+        insert into hero_drafts (id, batch_date, hero_id, payload, status, updated_at)
+        values (${id}, ${hero.checkedAt}, ${hero.id}, ${JSON.stringify(hero)}::jsonb, 'applied', now())
+        on conflict (id) do update set payload = excluded.payload, status = 'applied', updated_at = now()
+      `;
+      await recordAdminEvent(context.userId, "ingest.apply", { id: hero.id, name: hero.short || hero.name });
+    }
+    const catalog = await loadCatalog();
+    return { catalog, sourceError: sourceError || null, applied: data.heroes.map((h) => h.id) };
+  });
+

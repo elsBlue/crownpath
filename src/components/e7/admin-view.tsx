@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 import { Star } from "lucide-react";
 import { toast } from "sonner";
 import { HeroPortrait } from "@/components/hero-portrait";
 import {
+  EmptyNote,
   FilterChip,
   LetterHead,
   LIST,
@@ -14,6 +15,7 @@ import {
   TOOLBAR,
 } from "@/components/e7/chrome";
 import { FitsKit } from "@/components/e7/fits-kit";
+import { IngestAdmin } from "@/components/e7/ingest-view";
 import { JumpRail, groupByLetter } from "@/components/e7/jump-rail";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -26,17 +28,28 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
 import {
   deleteHero,
   deletePreset,
   deleteRecipe,
+  deleteNotice,
+  draftNoticeFromLog,
   getAnalytics,
   listAdminLog,
+  listAdminNotices,
   listMembers,
   listStrategyIdeas,
   saveHero,
   saveHeroIcon,
+  saveNotice,
   savePreset,
   saveRecipe,
   saveStrategyIdea,
@@ -49,6 +62,7 @@ import { useCatalog } from "@/lib/e7/catalog";
 import { CLASS_LABEL, ELEMENT_LABEL, heroRarity } from "@/lib/e7/heroes";
 import { fileToHeroIcon } from "@/lib/e7/icon";
 import { isOwnerIdentity } from "@/lib/e7/owner";
+import { useNotices } from "@/lib/e7/notices";
 import { ARCHETYPE_META } from "@/lib/e7/recipes";
 import { downloadJson } from "@/lib/e7/export-stats";
 import { useArenaStore } from "@/lib/e7/store";
@@ -64,16 +78,20 @@ import {
   type GuildMember,
   type Hero,
   type NormalEffect,
+  type Notice,
+  type NoticeKind,
   type Recipe,
   type RecipeStat,
   type SlotNeed,
   type StrategyIdea,
   type StrategyIdeaStatus,
   type WallStat,
+  NOTICE_KIND_LABEL,
+  NOTICE_KINDS,
 } from "@/lib/e7/types";
 import { cn, daysAgoLabel } from "@/lib/utils";
 
-type Tab = "units" | "strategies" | "ideas" | "walls" | "members" | "log" | "stats";
+type Tab = "units" | "ingest" | "strategies" | "ideas" | "updates" | "walls" | "members" | "log" | "stats";
 
 function slugify(value: string) {
   return value
@@ -87,6 +105,62 @@ function applyCatalog(next: { heroes: Hero[]; recipes: Recipe[]; presets: Defens
   useCatalog.getState().setCatalog(next);
 }
 
+function useEditorWide() {
+  const [wide, setWide] = useState(
+    () => typeof window !== "undefined" && window.matchMedia("(min-width: 1024px)").matches,
+  );
+  useEffect(() => {
+    const m = window.matchMedia("(min-width: 1024px)");
+    const on = () => setWide(m.matches);
+    m.addEventListener("change", on);
+    return () => m.removeEventListener("change", on);
+  }, []);
+  return wide;
+}
+
+function EditorSheet({
+  open,
+  onClose,
+  title,
+  description,
+  children,
+}: {
+  open: boolean;
+  onClose: () => void;
+  title: string;
+  description?: string;
+  children: ReactNode;
+}) {
+  const wide = useEditorWide();
+  return (
+    <Sheet
+      open={open}
+      onOpenChange={(next) => {
+        if (!next) onClose();
+      }}
+    >
+      <SheetContent side={wide ? "right" : "bottom"} className={cn("gap-0", wide && "max-w-2xl")}>
+        <SheetHeader>
+          <SheetTitle>{title}</SheetTitle>
+          {description ? <SheetDescription>{description}</SheetDescription> : null}
+        </SheetHeader>
+        {children}
+      </SheetContent>
+    </Sheet>
+  );
+}
+
+function SheetForm({ children, actions }: { children: ReactNode; actions: ReactNode }) {
+  return (
+    <>
+      <div className="app-scroll min-h-0 flex-1 px-5 pb-4">{children}</div>
+      <div className="shrink-0 border-t border-border/80 px-5 py-3">
+        <div className="flex flex-wrap gap-2">{actions}</div>
+      </div>
+    </>
+  );
+}
+
 export function AdminView() {
   const [tab, setTab] = useState<Tab>("units");
   return (
@@ -94,12 +168,14 @@ export function AdminView() {
       <PageHeader kicker="Admin" title="Catalog">
         Units, lineup strategies, and example defenses are shared. Progress stays private.
       </PageHeader>
-      <div className="no-scrollbar -mx-1 flex gap-2 overflow-x-auto px-1">
+      <div className="flex flex-wrap gap-2">
         {(
           [
             ["units", "Units"],
+            ["ingest", "Ingest"],
             ["strategies", "Strategies"],
             ["ideas", "Ideas"],
+            ["updates", "Updates"],
             ["walls", "Examples"],
             ["members", "Members"],
             ["log", "Log"],
@@ -112,8 +188,10 @@ export function AdminView() {
         ))}
       </div>
       {tab === "units" ? <HeroAdmin /> : null}
+      {tab === "ingest" ? <IngestAdmin /> : null}
       {tab === "strategies" ? <RecipeAdmin /> : null}
       {tab === "ideas" ? <IdeaAdmin /> : null}
+      {tab === "updates" ? <NoticeAdmin /> : null}
       {tab === "walls" ? <PresetAdmin /> : null}
       {tab === "members" ? <MemberAdmin /> : null}
       {tab === "log" ? <ActivityLog /> : null}
@@ -205,13 +283,21 @@ function HeroAdmin() {
           Add unit
         </Button>
       </div>
-      {editing ? (
-        <HeroForm
-          initial={editing}
-          onClose={() => setEditing(null)}
-          onSaved={() => setEditing(null)}
-        />
-      ) : null}
+      <EditorSheet
+        open={Boolean(editing)}
+        onClose={() => setEditing(null)}
+        title={editing && heroes.some((h) => h.id === editing.id) ? `Edit · ${editing.name}` : "New unit"}
+        description="Kit, roles, and speed. Icon is separate — tap the portrait on the list."
+      >
+        {editing ? (
+          <HeroForm
+            key={editing.id || "new"}
+            initial={editing}
+            onClose={() => setEditing(null)}
+            onSaved={() => setEditing(null)}
+          />
+        ) : null}
+      </EditorSheet>
       <IconDialog hero={iconHero} onClose={() => setIconHero(null)} />
       <ul className={LIST}>
         {groups.map((group) => (
@@ -256,6 +342,25 @@ function HeroAdmin() {
           </li>
         ))}
       </ul>
+      {list.length === 0 ? (
+        <EmptyNote>
+          {query.trim() || star
+            ? `No units match${query.trim() ? ` “${query.trim()}”` : ""}${star ? ` · ${star}★` : ""}.`
+            : "No units in the catalog."}{" "}
+          {query.trim() || star ? (
+            <button
+              type="button"
+              className="h-11 text-sm text-foreground underline-offset-4 hover:underline"
+              onClick={() => {
+                setQuery("");
+                setStar(0);
+              }}
+            >
+              Clear filters
+            </button>
+          ) : null}
+        </EmptyNote>
+      ) : null}
       {jumpItems.length > 1 ? <JumpRail items={jumpItems} /> : null}
     </div>
   );
@@ -436,18 +541,25 @@ function HeroForm({
   }
 
   return (
-    <section className="rounded-xl bg-card p-4 shadow-[var(--shadow-border)] sm:p-5">
-      <div className="mb-4 flex items-center justify-between">
-        <h2 className="font-display text-xl tracking-tight">{isNew ? "New unit" : "Edit unit"}</h2>
-        <button type="button" className="h-11 px-2 text-sm text-muted-foreground" onClick={onClose}>
-          Close
-        </button>
-      </div>
-      <div className="mb-4 flex items-center gap-3">
+    <SheetForm
+      actions={
+        <>
+          <Button onClick={() => void save()} disabled={busy || !form.id || !form.name}>
+            Save
+          </Button>
+          <Button type="button" variant="secondary" onClick={onClose}>
+            Close
+          </Button>
+          {!isNew ? (
+            <Button variant="destructive" onClick={() => void remove()} disabled={busy}>
+              Delete
+            </Button>
+          ) : null}
+        </>
+      }
+    >
+      <div className="mb-4">
         <HeroPortrait hero={{ ...form, name: form.name || "New", short: form.short || "New" }} size="lg" />
-        <p className="text-xs leading-relaxed text-muted-foreground">
-          Icon is separate. Close this, then tap the portrait on the list.
-        </p>
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
         <Field label="Name">
@@ -649,17 +761,7 @@ function HeroForm({
           </span>
         </span>
       </label>
-      <div className="mt-4 flex flex-wrap gap-2">
-        <Button onClick={() => void save()} disabled={busy || !form.id || !form.name}>
-          Save
-        </Button>
-        {!isNew ? (
-          <Button variant="destructive" onClick={() => void remove()} disabled={busy}>
-            Delete
-          </Button>
-        ) : null}
-      </div>
-    </section>
+    </SheetForm>
   );
 }
 
@@ -702,7 +804,21 @@ function RecipeAdmin() {
         </div>
         <Button variant="secondary" onClick={() => setEditing(blank)}>Add strategy</Button>
       </div>
-      {editing ? <RecipeForm initial={editing} onClose={() => setEditing(null)} onSaved={() => setEditing(null)} /> : null}
+      <EditorSheet
+        open={Boolean(editing)}
+        onClose={() => setEditing(null)}
+        title={editing && recipes.some((r) => r.id === editing.id) ? `Edit · ${editing.name}` : "New strategy"}
+        description="Lineup plan vs a wall type. Not an example enemy team."
+      >
+        {editing ? (
+          <RecipeForm
+            key={editing.id || "new"}
+            initial={editing}
+            onClose={() => setEditing(null)}
+            onSaved={() => setEditing(null)}
+          />
+        ) : null}
+      </EditorSheet>
       <ul className={LIST}>
         {list.map((recipe) => (
           <li key={recipe.id}>
@@ -792,13 +908,24 @@ function RecipeForm({
   }
 
   return (
-    <section className="flex flex-col gap-4 rounded-xl bg-card p-4 shadow-[var(--shadow-border)] sm:p-5">
-      <div className="flex items-center justify-between">
-        <h2 className="font-display text-xl tracking-tight">{isNew ? "New strategy" : "Edit strategy"}</h2>
-        <button type="button" className="h-11 px-2 text-sm text-muted-foreground" onClick={onClose}>
-          Close
-        </button>
-      </div>
+    <SheetForm
+      actions={
+        <>
+          <Button onClick={() => void save()} disabled={busy || !form.id || !form.name}>
+            Save
+          </Button>
+          <Button type="button" variant="secondary" onClick={onClose}>
+            Close
+          </Button>
+          {!isNew ? (
+            <Button variant="destructive" onClick={() => void remove()} disabled={busy}>
+              Delete
+            </Button>
+          ) : null}
+        </>
+      }
+    >
+      <div className="flex flex-col gap-4">
       <div className="grid gap-3 sm:grid-cols-2">
         <Field label="Name">
           <Input
@@ -864,17 +991,8 @@ function RecipeForm({
           </div>
         ))}
       </div>
-      <div className="flex flex-wrap gap-2">
-        <Button onClick={() => void save()} disabled={busy || !form.id || !form.name}>
-          Save
-        </Button>
-        {!isNew ? (
-          <Button variant="destructive" onClick={() => void remove()} disabled={busy}>
-            Delete
-          </Button>
-        ) : null}
       </div>
-    </section>
+    </SheetForm>
   );
 }
 
@@ -892,14 +1010,22 @@ function PresetAdmin() {
           Add example
         </Button>
       </div>
-      {editing ? (
-        <PresetForm
-          initial={editing}
-          heroes={heroes}
-          onClose={() => setEditing(null)}
-          onSaved={() => setEditing(null)}
-        />
-      ) : null}
+      <EditorSheet
+        open={Boolean(editing)}
+        onClose={() => setEditing(null)}
+        title={editing && presets.some((p) => p.id === editing.id) ? `Edit · ${editing.name}` : "New example"}
+        description="Ready-made enemy team for Scout."
+      >
+        {editing ? (
+          <PresetForm
+            key={editing.id || "new"}
+            initial={editing}
+            heroes={heroes}
+            onClose={() => setEditing(null)}
+            onSaved={() => setEditing(null)}
+          />
+        ) : null}
+      </EditorSheet>
       <ul className={LIST}>
         {presets.map((p) => (
           <li key={p.id}>
@@ -967,13 +1093,24 @@ function PresetForm({
   }
 
   return (
-    <section className="flex flex-col gap-3 rounded-xl bg-card p-4 shadow-[var(--shadow-border)] sm:p-5">
-      <div className="flex items-center justify-between">
-        <h2 className="font-display text-xl tracking-tight">{isNew ? "New example" : "Edit example"}</h2>
-        <button type="button" className="h-11 px-2 text-sm text-muted-foreground" onClick={onClose}>
-          Close
-        </button>
-      </div>
+    <SheetForm
+      actions={
+        <>
+          <Button onClick={() => void save()} disabled={busy || !form.name || form.heroIds.filter(Boolean).length < 4}>
+            Save
+          </Button>
+          <Button type="button" variant="secondary" onClick={onClose}>
+            Close
+          </Button>
+          {!isNew ? (
+            <Button variant="destructive" onClick={() => void remove()} disabled={busy}>
+              Delete
+            </Button>
+          ) : null}
+        </>
+      }
+    >
+      <div className="flex flex-col gap-3">
       <Field label="Name">
         <Input
           value={form.name}
@@ -1005,17 +1142,8 @@ function PresetForm({
           </Field>
         ))}
       </div>
-      <div className="flex flex-wrap gap-2">
-        <Button onClick={() => void save()} disabled={busy || !form.name || form.heroIds.filter(Boolean).length < 4}>
-          Save
-        </Button>
-        {!isNew ? (
-          <Button variant="destructive" onClick={() => void remove()} disabled={busy}>
-            Delete
-          </Button>
-        ) : null}
       </div>
-    </section>
+    </SheetForm>
   );
 }
 
@@ -1108,7 +1236,7 @@ function IdeaAdmin() {
         </div>
       </section>
 
-      <div className={cn("no-scrollbar -mx-1 flex gap-2 overflow-x-auto px-1")}>
+      <div className="flex flex-wrap gap-2">
         {(
           [
             ["inbox", "Inbox", counts.inbox],
@@ -1258,18 +1386,262 @@ function IdeaCard({
   );
 }
 
+function NoticeAdmin() {
+  const empty = {
+    id: "",
+    kind: "catalog" as NoticeKind,
+    title: "",
+    body: "",
+    published: true,
+  };
+  const [form, setForm] = useState(empty);
+  const [list, setList] = useState<Notice[] | null>(null);
+  const [filter, setFilter] = useState<"live" | "draft" | "all">("live");
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    void listAdminNotices()
+      .then(setList)
+      .catch((err) => {
+        toast.error(err instanceof Error ? err.message : "Could not load updates");
+        setList([]);
+      });
+  }, []);
+
+  const counts = useMemo(() => {
+    const rows = list ?? [];
+    return {
+      live: rows.filter((n) => n.published).length,
+      draft: rows.filter((n) => !n.published).length,
+      all: rows.length,
+    };
+  }, [list]);
+
+  const shown = useMemo(() => {
+    if (!list) return [];
+    if (filter === "all") return list;
+    if (filter === "draft") return list.filter((n) => !n.published);
+    return list.filter((n) => n.published);
+  }, [list, filter]);
+
+  async function publish() {
+    const title = form.title.trim();
+    const body = form.body.trim();
+    if (title.length < 3) {
+      toast.error("Title needs a few words.");
+      return;
+    }
+    if (body.length < 8) {
+      toast.error("Write what actually changed — a sentence at least.");
+      return;
+    }
+    setBusy(true);
+    try {
+      const next = await saveNotice({
+        data: {
+          id: form.id || undefined,
+          kind: form.kind,
+          title,
+          body,
+          published: form.published,
+        },
+      });
+      setList(next);
+      setForm(empty);
+      setFilter(form.published ? "live" : "draft");
+      void useNotices.getState().refresh();
+      toast(form.published ? "Published to the bell" : "Saved draft");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not save");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function fillFromLog() {
+    setBusy(true);
+    try {
+      const draft = await draftNoticeFromLog();
+      if (!draft) {
+        toast.error("Nothing in the last day. Write it by hand.");
+        return;
+      }
+      setForm((cur) => ({
+        ...cur,
+        body: cur.body.trim() ? `${cur.body.trim()}\n${draft}` : draft,
+        title: cur.title || "Catalog notes",
+        kind: cur.kind || "catalog",
+      }));
+      toast("Log pasted — edit before you publish.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not read log");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function remove(id: string) {
+    setBusy(true);
+    try {
+      const next = await deleteNotice({ data: { id } });
+      setList(next);
+      if (form.id === id) setForm(empty);
+      void useNotices.getState().refresh();
+      toast("Removed");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not delete");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-6">
+      <section className="flex flex-col gap-3 rounded-xl bg-card px-4 py-4 shadow-[var(--shadow-border)]">
+        <div>
+          <h2 className="font-display text-lg tracking-tight">
+            {form.id ? "Edit update" : "Write an update"}
+          </h2>
+          <p className="mt-1 max-w-lg text-sm leading-relaxed text-muted-foreground">
+            Members see this on the bell — what changed in a kit or Scout, not every save.
+            Editing a live note does not ping again.
+          </p>
+        </div>
+        <Field label="Kind">
+          <NativeSelect
+            value={form.kind}
+            onChange={(v) => setForm({ ...form, kind: v as NoticeKind })}
+            options={[...NOTICE_KINDS]}
+            labels={NOTICE_KIND_LABEL}
+          />
+        </Field>
+        <Field label="Title">
+          <Input
+            value={form.title}
+            onChange={(e) => setForm({ ...form, title: e.target.value })}
+            maxLength={80}
+            placeholder="Beehoo verified — Cannot Buff, not Seal"
+          />
+        </Field>
+        <Field label="What changed">
+          <Textarea
+            value={form.body}
+            onChange={(e) => setForm({ ...form, body: e.target.value })}
+            maxLength={2000}
+            rows={5}
+            placeholder="Speed 120. Incinerate is self-only. Flame Keeper +20% on his turn."
+          />
+        </Field>
+        <label className="flex h-11 items-center gap-2 text-sm">
+          <Checkbox
+            checked={form.published}
+            onCheckedChange={(v) => setForm({ ...form, published: v === true })}
+          />
+          Publish to members
+        </label>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button onClick={() => void publish()} disabled={busy || form.title.trim().length < 3}>
+            {form.published ? "Publish" : "Save draft"}
+          </Button>
+          <Button variant="secondary" disabled={busy} onClick={() => void fillFromLog()}>
+            Fill from today’s log
+          </Button>
+          {form.id ? (
+            <Button variant="ghost" disabled={busy} onClick={() => setForm(empty)}>
+              Cancel
+            </Button>
+          ) : null}
+          <p className="font-mono text-xs tabular-nums text-muted-foreground">{form.body.trim().length}/2000</p>
+        </div>
+      </section>
+
+      <div className="flex flex-wrap gap-2">
+        {(
+          [
+            ["live", "Live", counts.live],
+            ["draft", "Drafts", counts.draft],
+            ["all", "All", counts.all],
+          ] as const
+        ).map(([id, label, n]) => (
+          <FilterChip key={id} on={filter === id} onClick={() => setFilter(id)}>
+            {label}
+            <span className="ml-1.5 font-mono tabular-nums opacity-70">{n}</span>
+          </FilterChip>
+        ))}
+      </div>
+
+      {!list ? (
+        <p className="text-sm text-muted-foreground">Loading updates…</p>
+      ) : shown.length === 0 ? (
+        <EmptyNote>
+          {filter === "live"
+            ? "Nothing live. Publish above when a kit or Scout change is worth telling the guild."
+            : filter === "draft"
+              ? "No drafts."
+              : "No updates yet."}
+        </EmptyNote>
+      ) : (
+        <ul className="flex flex-col gap-2">
+          {shown.map((n) => (
+            <li
+              key={n.id}
+              className="flex flex-col gap-3 rounded-xl bg-card px-4 py-4 shadow-[var(--shadow-border)]"
+            >
+              <div>
+                <p className="text-xs font-medium tracking-[0.14em] text-muted-foreground uppercase">
+                  {NOTICE_KIND_LABEL[n.kind]} · {n.published ? "Live" : "Draft"}
+                </p>
+                <p className="mt-1 text-sm font-medium">{n.title}</p>
+                <p className="mt-1 text-sm leading-relaxed whitespace-pre-wrap text-muted-foreground">
+                  {n.body}
+                </p>
+                <p className="mt-2 text-xs text-muted-foreground">
+                  {n.author} · {ago(n.at)}
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant="secondary"
+                  disabled={busy}
+                  onClick={() =>
+                    setForm({
+                      id: n.id,
+                      kind: n.kind,
+                      title: n.title,
+                      body: n.body,
+                      published: n.published,
+                    })
+                  }
+                >
+                  Edit
+                </Button>
+                <Button variant="ghost" disabled={busy} onClick={() => void remove(n.id)}>
+                  Delete
+                </Button>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 function MemberAdmin() {
   const me = useArenaStore((s) => s.role);
   const email = useArenaStore((s) => s.email);
   const user = useCurrentUser();
   const owner = isOwnerIdentity(user?.primaryEmail, user?.displayName, email);
-  const [members, setMembers] = useState<GuildMember[]>([]);
+  const [members, setMembers] = useState<GuildMember[] | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
 
   useEffect(() => {
     void listMembers()
       .then(setMembers)
-      .catch(() => toast.error("Could not load members"));
+      .catch(() => {
+        toast.error("Could not load members");
+        setMembers([]);
+      });
   }, []);
 
   async function toggle(member: GuildMember) {
@@ -1296,7 +1668,7 @@ function MemberAdmin() {
         <p className="text-sm text-muted-foreground">In-game names are set by the owner.</p>
       )}
       <ul className={LIST}>
-        {members.map((m) => (
+        {(members ?? []).map((m) => (
           <li key={m.userId}>
             <RowCard className="flex-col items-stretch sm:flex-row sm:items-center">
               <div className="min-w-0 flex-1">
@@ -1313,7 +1685,7 @@ function MemberAdmin() {
                 variant={m.role === "admin" ? "default" : "secondary"}
                 disabled={
                   busyId === m.userId ||
-                  (m.role === "admin" && me === "admin" && members.filter((x) => x.role === "admin").length === 1)
+                  (m.role === "admin" && me === "admin" && (members ?? []).filter((x) => x.role === "admin").length === 1)
                 }
                 onClick={() => void toggle(m)}
               >
@@ -1322,9 +1694,13 @@ function MemberAdmin() {
             </RowCard>
           </li>
         ))}
-        {members.length === 0 ? (
-          <li className="rounded-xl bg-card px-3 py-5 text-sm text-muted-foreground shadow-[var(--shadow-border)]">
-            No members yet.
+        {!members ? (
+          <li>
+            <EmptyNote>Loading members…</EmptyNote>
+          </li>
+        ) : members.length === 0 ? (
+          <li>
+            <EmptyNote>No members yet.</EmptyNote>
           </li>
         ) : null}
       </ul>
@@ -1446,7 +1822,10 @@ function AnalyticsPanel() {
   useEffect(() => {
     void getAnalytics()
       .then(setData)
-      .catch(() => toast.error("Could not load stats"));
+      .catch(() => {
+        toast.error("Could not load stats");
+        setData({ recipes: [], walls: [] });
+      });
   }, []);
 
   if (!data) {
@@ -1457,9 +1836,13 @@ function AnalyticsPanel() {
 
   return (
     <div className="flex flex-col gap-6">
-      <p className="text-sm text-muted-foreground">
-        Recorded fights stay here for later. Scout no longer asks Won or Lost.
-        {fights === 0 ? " No fights recorded yet." : ` ${fights} recorded.`}
+      <p className="text-sm leading-relaxed text-muted-foreground">
+        Guild totals from when Scout still logged W/L — not this device’s fight list.
+        {fights === 0
+          ? " None stored."
+          : ` ${fights} guild fight${fights === 1 ? "" : "s"} on record.`}
+        {" "}
+        Your personal log can be empty while these numbers stay.
       </p>
       <div className="flex gap-1">
         <Button

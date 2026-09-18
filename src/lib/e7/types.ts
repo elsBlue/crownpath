@@ -375,3 +375,24 @@ export type WallStat = {
   wins: number;
   losses: number;
 };
+
+export const NOTICE_KINDS = ["catalog", "scout", "app"] as const;
+export type NoticeKind = (typeof NOTICE_KINDS)[number];
+
+export const NOTICE_KIND_LABEL: Record<NoticeKind, string> = {
+  catalog: "Units",
+  scout: "Scout",
+  app: "App",
+};
+
+export type Notice = {
+  id: string;
+  kind: NoticeKind;
+  title: string;
+  body: string;
+  published: boolean;
+  author: string;
+  at: number;
+  read: boolean;
+};
+

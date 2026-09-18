@@ -22,6 +22,21 @@ truncated; restore from git before doing anything else.
 
 After touching those files, run `node scripts/guard-e7-core.mjs`.
 
+## Ingest drafts (save SuperGrok usage)
+
+Journal kits are extracted **outside** SuperGrok (Admin → Ingest, or Groq via
+`scripts/extract-kits.mjs`). SuperGrok only reviews a draft JSON.
+
+- Batch **max 10**.
+- Drafts live in `drafts/YYYY-MM-DD.json`.
+- New chat, same Crownpath project: `apply drafts/YYYY-MM-DD.json`. Do **not**
+  dump Notion kits into chat. Do **not** rewrite `heroes.ts`.
+- Watch / prefer stay off unless the owner ticked them.
+- Do **not** publish a notice or Discord pin unless the user asks.
+
+Script: `node scripts/apply-hero-drafts.mjs drafts/YYYY-MM-DD.json` then
+`node scripts/guard-e7-core.mjs`. One grounded scout wall if Watch was applied.
+
 ## Verify a hero
 
 **Before marking a unit in-game verified, or when the user sends Journal
