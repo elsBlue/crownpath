@@ -266,6 +266,11 @@ async function ensureCatalog() {
     if (!hero.verified) continue;
     await sql`
       update heroes set
+        name = ${hero.name},
+        short = ${hero.short},
+        element = ${hero.element},
+        class = ${hero.class},
+        tier = ${hero.tier},
         roles = ${JSON.stringify(hero.roles)}::jsonb,
         tags = ${JSON.stringify(hero.tags)}::jsonb,
         effects = ${JSON.stringify(heroEffects(hero))}::jsonb,
@@ -282,7 +287,7 @@ async function ensureCatalog() {
         and (
           verified = false
           or checked_at is null
-          or checked_at < ${hero.checkedAt ?? todayStamp()}
+          or checked_at <= ${hero.checkedAt ?? todayStamp()}
         )
     `;
   }
@@ -1518,8 +1523,7 @@ export const ingestKeyStatus = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
   .handler(async ({ context }) => {
     await requireAdmin(context.userId);
-    const key = await readGroqKey();
-    return { configured: key.length > 0 };
+    return { configured: false };
   });
 
 export const setIngestKey = createServerFn({ method: "POST" })
@@ -1571,21 +1575,16 @@ export const extractKits = createServerFn({ method: "POST" })
   .handler(async ({ context, data }): Promise<{ heroes: HeroDraft[]; model?: string; checkedAt: string }> => {
     await requireAdmin(context.userId);
     const checkedAt = data.checkedAt || todayStamp();
-    const { catalogIndex } = await import("./ingest-groq.server");
-    const { normalizeDraft, parseDraftPayload } = await import("../../../scripts/ingest-lib.mjs");
+    const { catalogIndex } = await import("./ingest");
+    const { extractKitsDeterministic, normalizeDraft, parseDraftPayload } = await import("../../../scripts/ingest-lib.mjs");
     const catalog = catalogIndex();
     let heroes: HeroDraft[];
-    let model: string | undefined;
     if (data.mode === "json") {
       const parsed = parseDraftPayload(data.text);
       heroes = parsed.heroes.slice(0, BATCH_MAX).map((h: unknown) => normalizeDraft(h, catalog, checkedAt));
     } else {
-      const key = await readGroqKey();
-      if (!key) throw new Error("Add a Groq API key on this tab first.");
-      const { extractKitsWithGroq } = await import("./ingest-groq.server");
-      const result = await extractKitsWithGroq(data.text, checkedAt, key);
+      const result = extractKitsDeterministic(data.text, catalog, checkedAt);
       heroes = result.heroes;
-      model = result.model;
     }
     if (!heroes.length) throw new Error("No heroes in that paste.");
     const sql = await getSql();
@@ -1601,7 +1600,7 @@ export const extractKits = createServerFn({ method: "POST" })
       id: checkedAt,
       name: heroes.map((h) => h.short || h.name).join(", "),
     });
-    return { heroes, model, checkedAt };
+    return { heroes, checkedAt };
   });
 
 export const applyDrafts = createServerFn({ method: "POST" })
@@ -1609,9 +1608,9 @@ export const applyDrafts = createServerFn({ method: "POST" })
   .validator(z.object({ heroes: z.array(draftSchema).min(1).max(BATCH_MAX) }))
   .handler(async ({ context, data }) => {
     await requireAdmin(context.userId);
-    const unmatched = data.heroes.filter((h) => !h.matched || !h.id);
+    const unmatched = data.heroes.filter((h) => !h.id);
     if (unmatched.length) {
-      throw new Error(`Match these names to a catalog id first: ${unmatched.map((h) => h.name).join(", ")}`);
+      throw new Error(`Every draft needs an id: ${unmatched.map((h) => h.name).join(", ")}`);
     }
     const sql = await getSql();
     const { applyDraftsToRoot } = await import("../../../scripts/ingest-lib.mjs");

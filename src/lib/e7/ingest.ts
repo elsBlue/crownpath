@@ -1,4 +1,5 @@
 import type { Element, HeroClass, Role, Tag, Tier, UniqueEffect } from "./types";
+import { HEROES, heroRarity } from "./heroes";
 
 export const BATCH_MAX = 10;
 
@@ -68,6 +69,22 @@ export type HeroDraft = {
   checkedAt: string;
   matched: boolean;
 };
+
+export function catalogIndex() {
+  return HEROES.map((h) => ({
+    id: h.id,
+    name: h.name,
+    short: h.short,
+    element: h.element,
+    class: h.class,
+    tier: h.tier,
+    defense: h.defense,
+    offense: h.offense,
+    baseSpeed: h.baseSpeed,
+    rarity: heroRarity(h),
+    icon: h.icon,
+  }));
+}
 
 export type IngestBatch = {
   model?: string;

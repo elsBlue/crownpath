@@ -691,6 +691,10 @@ function jobFor(
       return `${n} strips two, then Block and Silence. With Dawn, Light of Condemnation is 1,000–25,000 additional on everyone from Souls spent. Extra attack is not Dual Attack.`;
     case "aube":
       return `${n} grants Cascade and Skill Nullifier, then extra-turns. Eternal Moment strips two, then Immobilize and Restrict. Concealment is not Illusion — area skills still hit her.`;
+    case "haru":
+      return `${n} is a max-HP bruiser. She barriers the team on S1, extra-turns only after Focus is full (not turn 1), and hands Morale on S3.`;
+    case "renoa":
+      return `${n} is a Defense-scaling dark ranger. Dirge Bullets turn buffs and debuffs on her into extra attacks (not Dual Attack), and S3 pushes the team 40% Combat Readiness.`;
     default:
       break;
   }

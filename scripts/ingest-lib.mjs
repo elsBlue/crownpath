@@ -330,8 +330,8 @@ export function normalizeDraft(raw, catalog, checkedAt) {
     matched: Boolean(matched),
   });
   if (matched) {
-    draft.defense = matched.defense;
-    draft.offense = matched.offense;
+    if (!Number.isFinite(Number(raw?.defense))) draft.defense = matched.defense;
+    if (!Number.isFinite(Number(raw?.offense))) draft.offense = matched.offense;
     if (matched.icon) draft.icon = matched.icon;
   }
   return draft;
@@ -344,6 +344,161 @@ export function parseDraftPayload(text) {
     return { checkedAt: raw.checkedAt || todayStamp(), heroes: raw.heroes };
   }
   throw new Error("Draft JSON must be { heroes: [...] }");
+}
+
+const HEADER_RE = /^(name|id|element|class|speed|base\s*speed|tier|rarity)\s*[:\-]\s*(.+)$/i;
+
+function headerMap(block) {
+  const out = {};
+  for (const line of String(block).split(/\n/)) {
+    const m = line.trim().match(HEADER_RE);
+    if (!m) continue;
+    out[m[1].toLowerCase().replace(/\s+/g, "")] = m[2].trim();
+  }
+  return out;
+}
+
+function firstNameLine(block) {
+  for (const line of String(block).split(/\n/)) {
+    const t = line.trim();
+    if (!t) continue;
+    if (HEADER_RE.test(t)) continue;
+    if (/^s[123]\b/i.test(t)) break;
+    if (t.length <= 48 && !t.includes(":")) return t;
+    break;
+  }
+  return "";
+}
+
+function kitParagraph(block) {
+  return String(block)
+    .replace(/\r/g, "")
+    .split(/\n/)
+    .map((l) => l.trim())
+    .filter((l) => l && !HEADER_RE.test(l))
+    .join(" ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 800);
+}
+
+function guessTags(kit) {
+  const t = kit.toLowerCase();
+  const tags = [];
+  const add = (id, on) => {
+    if (on && !tags.includes(id)) tags.push(id);
+  };
+  add("immunity", /\bimmunity\b/.test(t));
+  add("injury", /\binjur/.test(t));
+  add("cr-push", /combat readiness of all allies|combat readiness \+\d|increases combat readiness/.test(t));
+  add("cr-cut", /combat readiness −|combat readiness -|decreases combat readiness|cuts combat readiness/.test(t));
+  add("anti-revive", /\bextinction\b|\banti-revive\b/.test(t));
+  add("aoe", /all enemies/.test(t));
+  add("stun", /\bstun\b/.test(t));
+  add("barrier", /\bbarrier\b/.test(t));
+  add("counter", /\bcounterattack\b/.test(t));
+  const dualDenied = /does not trigger a dual attack|not (a )?dual attack|extra attack is not dual attack/.test(t);
+  add("dual-attack", /\bdual attack\b/.test(t) && !dualDenied);
+  add("soulburn", /\bsoulburn\b/.test(t));
+  add("ignore-er", /ignore(?:s)? effect resistance/.test(t));
+  add("unhealable", /\bunhealable\b/.test(t));
+  add("defbreak", /decrease defense/.test(t));
+  add("extra-turn", /extra turn/.test(t) && !/extra turn is soulburn only/.test(t));
+  add("invincible", /\binvincible\b/.test(t));
+  add("provoke", /\bprovoke\b/.test(t));
+  add("silence", /\bsilence\b/.test(t));
+  add("strip", /\bstrip\b|dispels? (all )?(buffs|one buff)/.test(t));
+  add("seal", /\bseal\b/.test(t) && !/cannot buff/.test(t));
+  return tags;
+}
+
+function guessFlags(kit) {
+  const t = kit.toLowerCase();
+  const flags = [];
+  if (/does not trigger a dual attack|extra attack is not dual attack/.test(t)) flags.push("extra-attack-not-dual-attack");
+  if (/extra turn is soulburn only/.test(t) || (/soulburn[\s\S]{0,80}extra turn/.test(t) && !/skill[\s\S]{0,40}extra turn/.test(t))) {
+    flags.push("extra-turn-soulburn-only");
+  }
+  if (/self (stealth|evasion) is not a miss nest/.test(t)) flags.push("self-stealth-not-evade");
+  if (/cannot buff/.test(t)) flags.push("cannot-buff-not-seal");
+  return flags;
+}
+
+function namedEffects(block, kind) {
+  const names = [];
+  const re =
+    kind === "buff"
+      ? /\b(Barrier|Immunity|Increase (?:Attack|Defense|Speed|Critical Hit Chance|Critical Hit Damage|Effect Resistance)|Invincible|Immortal|Stealth|Indomitable|Morale|Focus)\b/g
+      : /\b(Stun|Sleep|Silence|Seal|Unhealable|Provoke|Cannot Buff|Decrease (?:Attack|Defense|Speed|Hit Chance)|Target|Unbuffable)\b/g;
+  const text = String(block);
+  let m;
+  while ((m = re.exec(text))) {
+    if (!names.includes(m[1])) names.push(m[1]);
+  }
+  return names.slice(0, 12);
+}
+
+function uniqueFromKit(block) {
+  const out = [];
+  const re = /^([A-Z][A-Za-z '&.-]{1,40}) \((Unique|Undispellable)\):\s*(.+)$/gm;
+  let m;
+  while ((m = re.exec(String(block)))) {
+    out.push({ name: m[1].trim(), text: `${m[2]}. ${m[3].trim()}`.slice(0, 400) });
+  }
+  return out.slice(0, 8);
+}
+
+export function splitKitBlocks(text) {
+  const raw = String(text || "").trim();
+  if (!raw) return [];
+  const dashed = raw.split(/\n-{3,}\n|\n={3,}\n/).map((s) => s.trim()).filter(Boolean);
+  if (dashed.length > 1) return dashed.slice(0, BATCH_MAX);
+  const parts = raw.split(/\n(?=(?:Name\s*[:\-]|[A-Z][A-Za-z0-9 '&.-]{1,40}\n(?:S1 |Speed\s*[:\-]|Element\s*[:\-])))/);
+  return parts.map((s) => s.trim()).filter(Boolean).slice(0, BATCH_MAX);
+}
+
+export function extractKitsDeterministic(text, catalog, date) {
+  const blocks = splitKitBlocks(text);
+  const heroes = [];
+  for (const block of blocks) {
+    const headers = headerMap(block);
+    const name = headers.name || firstNameLine(block);
+    if (!name) continue;
+    const kit = kitParagraph(block);
+    const flags = guessFlags(kit + "\n" + block);
+    const element = String(headers.element || "").toLowerCase();
+    const klass = String(headers.class || "").toLowerCase().replace(/\s+/g, "");
+    const speedRaw = headers.speed || headers.basespeed;
+    const speed = speedRaw ? Number(String(speedRaw).replace(/[^\d.]/g, "")) : undefined;
+    heroes.push(
+      normalizeDraft(
+        {
+          name,
+          id: headers.id || slugify(name),
+          short: name.split(" ")[0],
+          element: ELEMENT_IDS.includes(element) ? element : undefined,
+          class: CLASS_IDS.includes(klass) ? klass : undefined,
+          baseSpeed: speed,
+          tags: guessTags(kit),
+          buffs: namedEffects(block, "buff"),
+          debuffs: namedEffects(block, "debuff"),
+          uniqueEffects: uniqueFromKit(block),
+          kit: kit || name,
+          jobFor: "",
+          watch: null,
+          prefer: [],
+          applyWatch: false,
+          flags,
+          sourceKit: block.slice(0, 8000),
+          roles: [],
+        },
+        catalog,
+        date,
+      ),
+    );
+  }
+  if (!heroes.length) throw new Error("No hero kits in that paste. Use SuperGrok JSON, or put Name / Element / Speed at the top of each kit.");
+  return { checkedAt: date, heroes };
 }
 
 export function parseGroqJson(content) {
@@ -422,13 +577,22 @@ export function formatHeroObject(draft, indent = "  ") {
 
 export function applyHeroObject(src, draft) {
   const range = braceRange(src, draft.id);
-  if (!range) throw new Error(`not in catalog: ${draft.id}`);
+  if (!range) return insertHeroObject(src, draft);
   const indent = indentOf(src, range.start);
   const existing = src.slice(range.start, range.end);
   const icon = existing.match(/\bicon:\s*("[^"]*")/);
   if (icon && !draft.icon) draft.icon = JSON.parse(icon[1]);
   const next = formatHeroObject(draft, indent);
   return src.slice(0, range.start) + next + src.slice(range.end);
+}
+
+export function insertHeroObject(src, draft) {
+  if (braceRange(src, draft.id)) return applyHeroObject(src, draft);
+  const byId = src.indexOf("\nexport const HERO_BY_ID");
+  const idx = byId >= 0 ? src.lastIndexOf("];", byId) : src.lastIndexOf("];");
+  if (idx < 0) throw new Error("HEROES array close not found");
+  const obj = formatHeroObject(draft, "  ");
+  return `${src.slice(0, idx)}${obj}\n${src.slice(idx)}`;
 }
 
 export function applyJobFor(src, draft) {
@@ -517,16 +681,21 @@ export function applyDraftsToRoot(root, payload, opts = {}) {
   const drafts = payload.heroes || [];
   if (drafts.length > BATCH_MAX) throw new Error(`batch max is ${BATCH_MAX}`);
   const applied = [];
+  let inserted = 0;
   for (const draft of drafts) {
     if (!draft?.id) throw new Error("draft missing id");
-    if (!braceRange(heroesSrc, draft.id)) throw new Error(`not in catalog: ${draft.id}`);
-    heroesSrc = applyHeroObject(heroesSrc, draft);
+    if (!braceRange(heroesSrc, draft.id)) {
+      heroesSrc = insertHeroObject(heroesSrc, draft);
+      inserted += 1;
+    } else {
+      heroesSrc = applyHeroObject(heroesSrc, draft);
+    }
     applied.push(draft.id);
   }
   const endLines = heroesSrc.split("\n").length;
   if (endLines < floor) throw new Error(`after patch ${endLines} lines — abort write`);
   const endCount = (heroesSrc.match(/\n    id: "/g) || []).length;
-  if (endCount !== startCount) throw new Error(`hero count ${endCount} != ${startCount}`);
+  if (endCount !== startCount + inserted) throw new Error(`hero count ${endCount} != ${startCount + inserted}`);
   if (opts.expectCount && endCount !== opts.expectCount) {
     throw new Error(`hero count ${endCount} != ${opts.expectCount}`);
   }

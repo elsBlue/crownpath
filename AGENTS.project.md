@@ -24,14 +24,19 @@ After touching those files, run `node scripts/guard-e7-core.mjs`.
 
 ## Ingest drafts (save SuperGrok usage)
 
-Journal kits are extracted **outside** SuperGrok (Admin → Ingest, or Groq via
-`scripts/extract-kits.mjs`). SuperGrok only reviews a draft JSON.
+Groq is **off**. Journal kits stay in Notion. SuperGrok (new chat, this project)
+decides Watch / prefer / tier / jobFor — those need the engine.
 
-- Batch **max 10**.
-- Drafts live in `drafts/YYYY-MM-DD.json`.
-- New chat, same Crownpath project: `apply drafts/YYYY-MM-DD.json`. Do **not**
-  dump Notion kits into chat. Do **not** rewrite `heroes.ts`.
-- Watch / prefer stay off unless the owner ticked them.
+Owner flow:
+
+1. Tick Verified + Checked on Notion. Fill Kit, Speed, Element, Class.
+2. New SuperGrok chat: `cek notion verified hari ini` (batch max **10**).
+3. SuperGrok writes `drafts/YYYY-MM-DD.json` and applies it. Do **not** dump
+   kits into chat. Do **not** rewrite `heroes.ts`.
+4. Admin → Ingest can paste that JSON to push the live DB. New ids are inserted;
+   no stub unit first.
+
+- Watch / prefer stay off unless SuperGrok ticked them (owner can still untick).
 - Do **not** publish a notice or Discord pin unless the user asks.
 
 Script: `node scripts/apply-hero-drafts.mjs drafts/YYYY-MM-DD.json` then

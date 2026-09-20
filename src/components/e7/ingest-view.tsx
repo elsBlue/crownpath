@@ -10,15 +10,10 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   applyDrafts,
   extractKits,
-  ingestKeyStatus,
   listDrafts,
-  setIngestKey,
 } from "@/lib/e7/api";
 import { useCatalog } from "@/lib/e7/catalog";
 import { BATCH_MAX, FLAG_LABEL, PREFER_SLOTS, type HeroDraft, type PreferSlot } from "@/lib/e7/ingest";
-import { isOwnerIdentity } from "@/lib/e7/owner";
-import { useArenaStore } from "@/lib/e7/store";
-import { useCurrentUser } from "@/lib/auth/use-current-user";
 import { cn } from "@/lib/utils";
 
 function todayStamp() {
@@ -27,27 +22,18 @@ function todayStamp() {
 
 export function IngestAdmin() {
   const heroes = useCatalog((s) => s.heroes);
-  const email = useArenaStore((s) => s.email);
-  const user = useCurrentUser();
-  const owner = isOwnerIdentity(user?.primaryEmail, user?.displayName, email);
   const [text, setText] = useState("");
-  const [mode, setMode] = useState<"kit" | "json">("kit");
+  const [mode, setMode] = useState<"kit" | "json">("json");
   const [checkedAt, setCheckedAt] = useState(todayStamp);
-  const [key, setKey] = useState("");
-  const [configured, setConfigured] = useState(false);
   const [drafts, setDrafts] = useState<HeroDraft[]>([]);
   const [selected, setSelected] = useState<string[]>([]);
-  const [busy, setBusy] = useState<"extract" | "apply" | "key" | null>(null);
-  const [model, setModel] = useState<string | null>(null);
+  const [busy, setBusy] = useState<"extract" | "apply" | null>(null);
 
   useEffect(() => {
-    void ingestKeyStatus()
-      .then((s) => setConfigured(s.configured))
-      .catch(() => setConfigured(false));
     void listDrafts()
       .then((rows) => {
         setDrafts(rows);
-        setSelected(rows.filter((d) => d.matched).map((d) => d.id));
+        setSelected(rows.map((d) => d.id).slice(0, BATCH_MAX));
       })
       .catch(() => setDrafts([]));
   }, []);
@@ -61,28 +47,13 @@ export function IngestAdmin() {
     setDrafts((cur) => cur.map((d) => (d.id === id ? { ...d, ...next } : d)));
   }
 
-  async function saveKey() {
-    setBusy("key");
-    try {
-      const next = await setIngestKey({ data: { key } });
-      setConfigured(next.configured);
-      setKey("");
-      toast(next.configured ? "Groq key saved" : "Groq key cleared");
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Could not save key");
-    } finally {
-      setBusy(null);
-    }
-  }
-
   async function extract() {
     setBusy("extract");
     try {
       const next = await extractKits({ data: { text, checkedAt, mode } });
       setDrafts(next.heroes);
-      setSelected(next.heroes.filter((d) => d.matched).map((d) => d.id));
-      setModel(next.model ?? null);
-      toast(`Extracted ${next.heroes.length} · review Watch and prefer before apply`);
+      setSelected(next.heroes.map((d) => d.id).slice(0, BATCH_MAX));
+      toast(`Loaded ${next.heroes.length}. Watch / prefer / jobFor stay SuperGrok-only.`);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Extract failed");
     } finally {
@@ -113,40 +84,15 @@ export function IngestAdmin() {
         items={[
           { label: "Pending", value: String(drafts.length) },
           { label: "Selected", value: `${chosen.length}/${BATCH_MAX}` },
-          { label: "Groq", value: configured ? "Ready" : "No key" },
+          { label: "Source", value: "SuperGrok" },
         ]}
       />
       <p className="max-w-xl text-sm leading-relaxed text-muted-foreground">
-        Paste up to {BATCH_MAX} Journal kits. Groq drafts the catalog object. You confirm Watch and
-        prefer, then apply. SuperGrok is only for a later source review if Watch was ticked. No
+        Groq is off. Watch, prefer, tier, and jobFor come from SuperGrok in a new Crownpath chat
+        (“cek Notion verified hari ini”). Paste that draft JSON here and apply. Kit paste only fills
+        mechanical tags — it will not invent Watch. New names are added; no stub unit first. No
         guild notice is posted from here.
       </p>
-
-      {owner ? (
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
-          <label className="flex min-w-0 flex-1 flex-col gap-1.5">
-            <Label>Groq API key</Label>
-            <Input
-              type="password"
-              autoComplete="off"
-              placeholder={configured ? "Saved · paste a new key to replace" : "gsk_…"}
-              value={key}
-              onChange={(e) => setKey(e.target.value)}
-            />
-          </label>
-          <Button
-            variant="secondary"
-            disabled={busy !== null || (!key && !configured)}
-            onClick={() => void saveKey()}
-          >
-            {busy === "key" ? "Saving…" : configured && !key ? "Clear key" : "Save key"}
-          </Button>
-        </div>
-      ) : (
-        <p className="text-sm text-muted-foreground">
-          {configured ? "Extractor is ready." : "Ask the owner to save a Groq key on this tab."}
-        </p>
-      )}
 
       <div className={TOOLBAR}>
         <FilterChip on={mode === "kit"} onClick={() => setMode("kit")}>
@@ -160,9 +106,9 @@ export function IngestAdmin() {
         value={text}
         onChange={(e) => setText(e.target.value)}
         placeholder={
-          mode === "kit"
-            ? "Paste Journal kits here, one hero after another. Separate with a blank line or ---."
-            : "Paste drafts/YYYY-MM-DD.json"
+          mode === "json"
+            ? "Paste drafts/YYYY-MM-DD.json from SuperGrok"
+            : "Paste Journal kits. Mechanical tags only — SuperGrok still fills Watch / prefer / jobFor."
         }
         className="min-h-40"
       />
@@ -172,9 +118,8 @@ export function IngestAdmin() {
           <Input type="date" value={checkedAt} onChange={(e) => setCheckedAt(e.target.value)} />
         </label>
         <Button disabled={busy !== null || text.trim().length < 20} onClick={() => void extract()}>
-          {busy === "extract" ? "Extracting…" : `Extract · max ${BATCH_MAX}`}
+          {busy === "extract" ? "Loading…" : mode === "json" ? `Load JSON · max ${BATCH_MAX}` : `Parse kit · max ${BATCH_MAX}`}
         </Button>
-        {model ? <p className="text-xs text-muted-foreground sm:pb-3">{model}</p> : null}
       </div>
 
       {drafts.length === 0 ? (
@@ -206,9 +151,9 @@ export function IngestAdmin() {
         <Button
           variant="secondary"
           disabled={!drafts.length}
-          onClick={() => setSelected(drafts.filter((d) => d.matched).map((d) => d.id).slice(0, BATCH_MAX))}
+          onClick={() => setSelected(drafts.map((d) => d.id).slice(0, BATCH_MAX))}
         >
-          Select matched
+          Select all
         </Button>
       </div>
     </div>
@@ -248,12 +193,19 @@ function DraftCard({
         <div className="min-w-0 flex-1">
           <p className="text-sm font-medium">{draft.name}</p>
           <p className="text-xs text-muted-foreground">
-            {draft.matched ? draft.id : "Unmatched — pick a catalog unit"}
+            {draft.matched ? draft.id : `New · ${draft.id}`}
+            {` · ${draft.element} ${draft.class}`}
             {draft.baseSpeed ? ` · spd ${draft.baseSpeed}` : " · no speed"}
             {` · ${draft.tier}`}
           </p>
         </div>
       </div>
+      {!draft.matched ? (
+        <p className="text-xs text-muted-foreground">
+          Not in the catalog yet. Apply will add {draft.id}. Remap only if this is a rename of an
+          existing unit.
+        </p>
+      ) : null}
       {!draft.matched ? (
         <label className="flex flex-col gap-1.5">
           <Label>Catalog unit</Label>
@@ -316,7 +268,7 @@ function DraftCard({
           <span className="block text-xs text-muted-foreground">
             {draft.watch
               ? `${draft.watch.label} — ${draft.watch.note}`
-              : "Groq did not propose one. Leave off unless play changes."}
+              : "No Watch. SuperGrok ticks this only when play changes."}
           </span>
         </span>
       </label>

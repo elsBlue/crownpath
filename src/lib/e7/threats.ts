@@ -1066,7 +1066,16 @@ export function wallThreats(heroes: Hero[]): DraftThreat[] {
     }
   }
 
+  if (ids.has("renoa")) {
+    add({
+      key: "renoa-dirge",
+      label: "Renoa Dirge",
+      note: "Buffs and debuffs on her become Dirge Bullets. After each skill she extra-attacks (not Dual Attack). S3 is +40% Combat Readiness, not extra turn.",
+    });
+  }
+
   const rank: Record<string, number> = {
+    "renoa-dirge": 10,
     speedcap: 0,
     "first-cycle": 1,
     "cannot-miss": 1,

@@ -6083,6 +6083,66 @@ export const HEROES: Hero[] = [
     verified: true,
     checkedAt: "2026-09-06",
   },
+  {
+    id: "haru",
+    name: "Haru",
+    short: "Haru",
+    element: "ice",
+    class: "warrior",
+    tier: "A",
+    roles: ["bruiser"],
+    tags: ["barrier","extra-turn","soulburn"],
+    effects: ["extra-turn","debuff-dispel","increase-hit"],
+    buffs: ["Barrier","Indomitable","Morale"],
+    uniqueEffects: [
+      {
+        name: "Indomitable",
+        text: "Undispellable. +30% Defense and Effect Resistance. 70% to all allies for 1 turn at battle start.",
+      },
+      {
+        name: "Morale",
+        text: "Team-wide. When attacking, +10% damage dealt. Stacks. Granted 2 turns from Anchor Shot.",
+      },
+      {
+        name: "Power Strike",
+        text: "Full-Focus S1. Extra turn, Defense penetration, ignore elemental disadvantage. Not Dual Attack. Not turn 1 — she starts at 3 Focus and needs 5.",
+      },
+    ],
+    kit: "S1 Power Anchor: max-HP hit + team Barrier 1t. At 5 Focus (she starts with 3) S1 becomes Power Strike: extra turn, Defense pen, ignore elemental disadvantage. That attack does not trigger Dual Attack. Extra turn is not turn 1. S2 Anchor Pointer: battle start 3 Focus and 70% team Indomitable 1t. Start of turn if she has a buff: self-cleanse all debuffs and reset Anchor Shot. S3 Anchor Shot (4 CD): vamp, team Morale 2t, 70% pen if the target has a Barrier, damage stacks up to 5. Soulburn: +100% Hit Chance, not extra turn.",
+    defense: 7,
+    offense: 6,
+    baseSpeed: 102,
+    verified: true,
+    checkedAt: "2026-09-18",
+  },
+  {
+    id: "renoa",
+    name: "Renoa",
+    short: "Renoa",
+    element: "dark",
+    class: "ranger",
+    tier: "A",
+    roles: ["dps"],
+    tags: ["cr-push","soulburn"],
+    effects: ["increase-cr"],
+    buffs: ["Dirge Bullet"],
+    uniqueEffects: [
+      {
+        name: "Dirge Bullet",
+        text: "Unique. +20% Speed and Critical Hit Damage. Dispelled at the end of the turn.",
+      },
+      {
+        name: "Black Rose",
+        text: "Buffs and debuffs on her become Dirge Bullets. After a skill on her turn she extra-attacks a random enemy (not Dual Attack). Attack count scales with bullets.",
+      },
+    ],
+    kit: "S1 Instant Judgment: Defense-scaling pistol. At full Focus S1 becomes Black Thorn: hit + max Dirge Bullets. Black Thorn does not trigger Dual Attack. Dirge Bullet: +20% Speed and Critical Hit Damage, gone at end of turn. S2 Black Rose: buffs and debuffs on her become Dirge Bullets. After a skill on her turn, extra-attack a random enemy (not Dual Attack). Extra attack is not Dual Attack. S3 Flower of Devoured Fate (6 CD): team Combat Readiness +40% and three Dirge Bullets. Soulburn doubles the bullets, not extra turn.",
+    defense: 5,
+    offense: 8,
+    baseSpeed: 122,
+    verified: true,
+    checkedAt: "2026-09-18",
+  },
 ];
 
 export const HERO_BY_ID: Record<string, Hero> = Object.fromEntries(
