@@ -6,7 +6,7 @@ import { isOwnerIdentity } from "@/lib/e7/owner";
 import { useArenaStore } from "@/lib/e7/store";
 import { BootScreen } from "./boot-screen";
 
-const INTRO_MS = 11600;
+const SEEN_KEY = "crownpath-shade";
 
 export function RequireAuth({
   children,
@@ -20,23 +20,36 @@ export function RequireAuth({
   const role = useArenaStore((s) => s.role);
   const email = useArenaStore((s) => s.email);
   const [introDone, setIntroDone] = useState(false);
+  const [brief] = useState(() => {
+    try {
+      return sessionStorage.getItem(SEEN_KEY) === "4";
+    } catch {
+      return false;
+    }
+  });
+
+  const ready = !isPending && !!user && hydrated;
+  const showBoot = isPending || (user && (!hydrated || !introDone));
 
   useEffect(() => {
-    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (reduced || sessionStorage.getItem("crownpath-shade") === "1") {
-      setIntroDone(true);
-      return;
+    if (!introDone) return;
+    try {
+      sessionStorage.setItem(SEEN_KEY, "4");
+    } catch {
+      /* private mode */
     }
-    const timer = window.setTimeout(() => {
-      sessionStorage.setItem("crownpath-shade", "1");
-      setIntroDone(true);
-    }, INTRO_MS);
-    return () => window.clearTimeout(timer);
-  }, []);
+  }, [introDone]);
 
-  if (isPending) return <BootScreen />;
+  if (showBoot) {
+    return (
+      <BootScreen
+        canLeave={ready}
+        brief={brief}
+        onFinished={() => setIntroDone(true)}
+      />
+    );
+  }
   if (!user) return <RedirectToSignIn />;
-  if (!hydrated || !introDone) return <BootScreen />;
   if (
     admin &&
     role !== "admin" &&
