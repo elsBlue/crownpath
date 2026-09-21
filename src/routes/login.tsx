@@ -31,10 +31,10 @@ function Login() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  if (isPending) return <BootScreen label="Checking session…" />;
+  if (isPending) return <BootScreen label="Checking session…" play={false} />;
   if (user) {
     void navigate({ to: "/" });
-    return <BootScreen />;
+    return <BootScreen play={false} />;
   }
 
   async function onEmail(e: React.FormEvent) {
