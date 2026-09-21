@@ -187,34 +187,42 @@
   }
 }
 
-@keyframes boot-shade {
-  0% {
-    opacity: 0;
-  }
-  26% {
-    opacity: 0.24;
-  }
-  74% {
-    opacity: 0.22;
-  }
-  100% {
-    opacity: 0;
-  }
-}
-
 .boot-shade {
   opacity: 0;
-  animation: boot-shade 12s cubic-bezier(0.45, 0, 0.55, 1) both;
+  transform: translateZ(0);
+  will-change: opacity;
+  transition: opacity 1.8s var(--ease-smooth-out);
+}
+
+.boot-shade[data-phase="in"],
+.boot-shade[data-phase="hold"] {
+  opacity: 0.38;
+}
+
+.boot-shade[data-phase="out"],
+.boot-shade[data-phase="wait"] {
+  opacity: 0;
+}
+
+.boot-shade[data-phase="out"] {
+  transition: opacity 2.4s var(--ease-smooth-out);
 }
 
 .boot-shade-media {
   display: block;
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
   object-position: center top;
   mix-blend-mode: lighten;
   filter: saturate(0.85) brightness(0.82);
+}
+
+html.light .boot-shade-media {
+  mix-blend-mode: multiply;
+  filter: saturate(0.85) brightness(0.9);
 }
 
 .boot-shade-veil {
@@ -235,7 +243,11 @@
   .boot-shade-media {
     object-fit: cover;
     object-position: center 16%;
-    filter: saturate(0.82) brightness(0.88) blur(1px);
+    filter: saturate(0.82) brightness(0.88);
+  }
+
+  html.light .boot-shade-media {
+    filter: saturate(0.82) brightness(0.92);
   }
 
   .boot-shade-veil {
@@ -249,11 +261,11 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
+  .boot-shade {
+    transition-duration: 0.45s;
+  }
+
+  .boot-shade[data-phase="out"] {
+    transition-duration: 0.45s;
   }
 }
