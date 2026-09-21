@@ -20,13 +20,6 @@ export function RequireAuth({
   const role = useArenaStore((s) => s.role);
   const email = useArenaStore((s) => s.email);
   const [introDone, setIntroDone] = useState(false);
-  const [brief] = useState(() => {
-    try {
-      return sessionStorage.getItem(SEEN_KEY) === "4";
-    } catch {
-      return false;
-    }
-  });
 
   const ready = !isPending && !!user && hydrated;
   const showBoot = isPending || (user && (!hydrated || !introDone));
@@ -44,7 +37,6 @@ export function RequireAuth({
     return (
       <BootScreen
         canLeave={ready}
-        brief={brief}
         onFinished={() => setIntroDone(true)}
       />
     );

@@ -4,10 +4,9 @@ import { Brand } from "./brand";
 const SHADE = { poster: "/intro/shade.jpg?v=2", src: "/intro/shade.mp4?v=2" };
 const BREEZE = { poster: "/intro/breeze.jpg?v=2", src: "/intro/breeze.mp4?v=2" };
 
-const IN_MS = 1800;
-const HOLD_MS = 4200;
-const OUT_MS = 2400;
-const BRIEF_HOLD_MS = 700;
+const IN_MS = 2000;
+const HOLD_MS = 5200;
+const OUT_MS = 2800;
 
 type Phase = "wait" | "in" | "hold" | "out";
 
@@ -18,7 +17,6 @@ function isLightDom() {
 export function BootScreen({
   label = "Loading data…",
   canLeave = false,
-  brief = false,
   onFinished,
 }: {
   label?: string;
@@ -27,45 +25,51 @@ export function BootScreen({
   onFinished?: () => void;
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const started = useRef(false);
   const finished = useRef(false);
   const [clip, setClip] = useState(() => (isLightDom() ? BREEZE : SHADE));
   const [phase, setPhase] = useState<Phase>("wait");
-  const [ready, setReady] = useState(false);
 
   useEffect(() => {
     setClip(isLightDom() ? BREEZE : SHADE);
   }, []);
 
   useEffect(() => {
+    let id = 0;
+    id = requestAnimationFrame(() => {
+      id = requestAnimationFrame(() => setPhase("in"));
+    });
+    return () => cancelAnimationFrame(id);
+  }, []);
+
+  useEffect(() => {
     const el = videoRef.current;
-    if (!el) return;
-    let alive = true;
+    if (!el || phase === "wait" || started.current) return;
+    started.current = true;
     el.muted = true;
+    el.defaultMuted = true;
+    el.playbackRate = 1;
     el.playsInline = true;
     el.setAttribute("playsinline", "");
     el.setAttribute("webkit-playsinline", "");
 
-    const mark = () => {
-      if (alive) setReady(true);
+    const playFromStart = () => {
+      try {
+        el.currentTime = 0;
+      } catch {
+        /* iOS may throw before ready */
+      }
+      el.playbackRate = 1;
+      void el.play().catch(() => {
+        /* poster stays; fade still runs */
+      });
     };
-    el.addEventListener("playing", mark);
-    el.addEventListener("canplay", mark);
-    const fallback = window.setTimeout(mark, 900);
-    void el.play().catch(mark);
 
-    return () => {
-      alive = false;
-      window.clearTimeout(fallback);
-      el.removeEventListener("playing", mark);
-      el.removeEventListener("canplay", mark);
-    };
-  }, [clip.src]);
+    if (el.readyState >= 1) playFromStart();
+    else el.addEventListener("loadeddata", playFromStart, { once: true });
 
-  useEffect(() => {
-    if (!ready || phase !== "wait") return;
-    const id = requestAnimationFrame(() => setPhase("in"));
-    return () => cancelAnimationFrame(id);
-  }, [ready, phase]);
+    return () => el.removeEventListener("loadeddata", playFromStart);
+  }, [phase, clip.src]);
 
   useEffect(() => {
     if (phase !== "in") return;
@@ -75,15 +79,14 @@ export function BootScreen({
 
   useEffect(() => {
     if (phase !== "hold") return;
-    const minHold = brief ? BRIEF_HOLD_MS : HOLD_MS;
-    const started = Date.now();
+    const begun = Date.now();
     const tick = () => {
-      if (Date.now() - started >= minHold && canLeave) setPhase("out");
+      if (Date.now() - begun >= HOLD_MS && canLeave) setPhase("out");
     };
     const id = window.setInterval(tick, 100);
     tick();
     return () => window.clearInterval(id);
-  }, [phase, canLeave, brief]);
+  }, [phase, canLeave]);
 
   useEffect(() => {
     if (phase !== "out") return;
@@ -107,14 +110,15 @@ export function BootScreen({
             ref={videoRef}
             className="boot-shade-media"
             src={clip.src}
-            autoPlay
+            poster={clip.poster}
             muted
             playsInline
-            loop
             preload="auto"
             onError={() => {
-              if (clip.src !== SHADE.src) setClip(SHADE);
-              else setReady(true);
+              if (clip.src !== SHADE.src) {
+                started.current = false;
+                setClip(SHADE);
+              }
             }}
           />
           <div className="boot-shade-veil absolute inset-0" />
