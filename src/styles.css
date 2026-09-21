@@ -191,12 +191,12 @@
   opacity: 0;
   transform: translateZ(0);
   will-change: opacity;
-  transition: opacity 1.8s var(--ease-smooth-out);
+  transition: opacity 0.8s var(--ease-smooth-out);
 }
 
 .boot-shade[data-phase="in"],
 .boot-shade[data-phase="hold"] {
-  opacity: 0.38;
+  opacity: 0.5;
 }
 
 .boot-shade[data-phase="out"],
@@ -205,7 +205,7 @@
 }
 
 .boot-shade[data-phase="out"] {
-  transition: opacity 2.4s var(--ease-smooth-out);
+  transition: opacity 4s var(--ease-smooth-out);
 }
 
 .boot-shade-media {
@@ -262,10 +262,10 @@ html.light .boot-shade-media {
 
 @media (prefers-reduced-motion: reduce) {
   .boot-shade {
-    transition-duration: 0.45s;
+    transition-duration: 0.5s;
   }
 
   .boot-shade[data-phase="out"] {
-    transition-duration: 0.45s;
+    transition-duration: 1.2s;
   }
 }
