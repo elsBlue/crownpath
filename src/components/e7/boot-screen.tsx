@@ -4,9 +4,9 @@ import { Brand } from "./brand";
 const SHADE = { poster: "/intro/shade.jpg?v=2", src: "/intro/shade.mp4?v=2" };
 const BREEZE = { poster: "/intro/breeze.jpg?v=2", src: "/intro/breeze.mp4?v=2" };
 
-const IN_MS = 2000;
-const HOLD_MS = 5200;
-const OUT_MS = 2800;
+const IN_MS = 800;
+const HOLD_MS = 8000;
+const OUT_MS = 4000;
 
 type Phase = "wait" | "in" | "hold" | "out";
 
@@ -21,31 +21,23 @@ export function BootScreen({
 }: {
   label?: string;
   canLeave?: boolean;
-  brief?: boolean;
   onFinished?: () => void;
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
-  const started = useRef(false);
   const finished = useRef(false);
-  const [clip, setClip] = useState(() => (isLightDom() ? BREEZE : SHADE));
+  const [clip, setClip] = useState(SHADE);
   const [phase, setPhase] = useState<Phase>("wait");
+  const [motion, setMotion] = useState(false);
 
   useEffect(() => {
     setClip(isLightDom() ? BREEZE : SHADE);
-  }, []);
-
-  useEffect(() => {
-    let id = 0;
-    id = requestAnimationFrame(() => {
-      id = requestAnimationFrame(() => setPhase("in"));
-    });
+    const id = requestAnimationFrame(() => setPhase("in"));
     return () => cancelAnimationFrame(id);
   }, []);
 
   useEffect(() => {
     const el = videoRef.current;
-    if (!el || phase === "wait" || started.current) return;
-    started.current = true;
+    if (!el || phase === "wait") return;
     el.muted = true;
     el.defaultMuted = true;
     el.playbackRate = 1;
@@ -53,22 +45,28 @@ export function BootScreen({
     el.setAttribute("playsinline", "");
     el.setAttribute("webkit-playsinline", "");
 
-    const playFromStart = () => {
+    const start = () => {
       try {
         el.currentTime = 0;
       } catch {
-        /* iOS may throw before ready */
+        /* not ready */
       }
       el.playbackRate = 1;
-      void el.play().catch(() => {
-        /* poster stays; fade still runs */
+      void el.play().then(() => setMotion(true)).catch(() => {
+        setMotion(false);
       });
     };
 
-    if (el.readyState >= 1) playFromStart();
-    else el.addEventListener("loadeddata", playFromStart, { once: true });
+    if (el.readyState >= 2) start();
+    else {
+      el.addEventListener("canplay", start, { once: true });
+      el.addEventListener("loadeddata", start, { once: true });
+    }
 
-    return () => el.removeEventListener("loadeddata", playFromStart);
+    return () => {
+      el.removeEventListener("canplay", start);
+      el.removeEventListener("loadeddata", start);
+    };
   }, [phase, clip.src]);
 
   useEffect(() => {
@@ -80,11 +78,9 @@ export function BootScreen({
   useEffect(() => {
     if (phase !== "hold") return;
     const begun = Date.now();
-    const tick = () => {
+    const id = window.setInterval(() => {
       if (Date.now() - begun >= HOLD_MS && canLeave) setPhase("out");
-    };
-    const id = window.setInterval(tick, 100);
-    tick();
+    }, 100);
     return () => window.clearInterval(id);
   }, [phase, canLeave]);
 
@@ -106,19 +102,17 @@ export function BootScreen({
           data-phase={phase}
           aria-hidden
         >
+          <img src={clip.poster} alt="" className="boot-shade-media" />
           <video
             ref={videoRef}
             className="boot-shade-media"
             src={clip.src}
-            poster={clip.poster}
             muted
             playsInline
             preload="auto"
+            style={{ opacity: motion ? 1 : 0 }}
             onError={() => {
-              if (clip.src !== SHADE.src) {
-                started.current = false;
-                setClip(SHADE);
-              }
+              if (clip.src !== SHADE.src) setClip(SHADE);
             }}
           />
           <div className="boot-shade-veil absolute inset-0" />
