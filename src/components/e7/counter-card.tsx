@@ -109,13 +109,13 @@ export function CounterCard({
         )}
         {team.missing.map((m) => (
           <Badge key={m} variant="loss">
-            No {m}
+            Empty {m}
           </Badge>
         ))}
         {team.gaps.map((g) => (
           <span key={g} className="inline-flex items-center gap-0.5">
-            <Badge variant="loss">No {g}</Badge>
-            <InfoTip label={`About no ${g}`} side="top">
+            <Badge variant="loss">Unanswered {g}</Badge>
+            <InfoTip label={`About unanswered ${g}`} side="top">
               {gapHint(g)}
             </InfoTip>
           </span>
@@ -125,7 +125,7 @@ export function CounterCard({
       <div className="counter-fold" data-open={selected ? "true" : "false"}>
         <div>
           <CardContent className="flex flex-col gap-4 border-t border-border px-4 pt-4 pb-5 sm:px-5">
-            <Block label="Wincon" text={team.wincon} />
+            <Block label="How it wins" text={team.wincon} />
             {team.pitfalls.length > 0 ? (
               <div>
                 <p className="text-xs font-medium tracking-wider text-muted-foreground uppercase">
@@ -193,21 +193,21 @@ export function CounterCard({
 
 function gapHint(label: string): string {
   if (label === "Offering") {
-    return "This draft has no unit that ignores Offering. Seventy percent of damage is still shared onto the front.";
+    return "Nobody on this lineup ignores damage sharing. Most of the hit still goes to their front.";
   }
   if (label === "Forced targeting") {
-    return "This draft has no area attack. Single-target skills still have to hit her.";
+    return "This lineup has no area attack. Single-target skills still have to hit her.";
   }
   if (label === "Revive / reset") {
-    return "This draft has no anti-revive. A kill can still reset.";
+    return "This lineup has no anti-revive. A kill can still bring that unit back.";
   }
   if (label === "Evasion") {
-    return "This draft has no answer to miss. Single-target third skills still fail often.";
+    return "This lineup has no answer to miss. Single-target skills into the miss core still fail often.";
   }
   if (label === "Speed cap") {
-    return "This draft has no injury plan. You cannot outrun the first cycle.";
+    return "This lineup has no injury plan. You cannot outrun a Speed cap.";
   }
-  return `This draft does not answer ${label}. The wall's kit still applies.`;
+  return `This lineup does not answer ${label}. That part of the wall still applies.`;
 }
 
 function Block({ label, text }: { label: string; text: string }) {
