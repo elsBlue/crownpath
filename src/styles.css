@@ -1,6 +1,8 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   --font-sans: "Figtree", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Newsreader", ui-serif, Georgia, "Times New Roman", serif;
@@ -48,8 +50,49 @@
   --ease-smooth-out: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
+html.light {
+  color-scheme: light;
+  --color-background: #eef4ef;
+  --color-foreground: #1c241c;
+  --color-card: #f7faf6;
+  --color-card-foreground: #1c241c;
+  --color-popover: #fbfcf9;
+  --color-popover-foreground: #1c241c;
+  --color-primary: #4f6b52;
+  --color-primary-foreground: #f7faf6;
+  --color-secondary: #e2ebe3;
+  --color-secondary-foreground: #1c241c;
+  --color-muted: #e2ebe3;
+  --color-muted-foreground: #5c6a5e;
+  --color-accent: #d5e4d6;
+  --color-accent-foreground: #1c241c;
+  --color-destructive: #b55252;
+  --color-destructive-foreground: #1c241c;
+  --color-border: rgba(36, 52, 40, 0.12);
+  --color-input: rgba(36, 52, 40, 0.12);
+  --color-ring: #4f6b52;
+  --color-steel: #6a8470;
+  --color-win: #3f7a52;
+  --color-loss: #b55252;
+  --color-fire: #b56a48;
+  --color-ice: #4f7ea8;
+  --color-earth: #6f8248;
+  --color-light: #b8a56a;
+  --color-dark: #5a5e6a;
+  --color-elevated: #e2ebe3;
+  --shadow-border:
+    0 0 0 1px rgba(28, 40, 30, 0.08),
+    0 1px 2px -1px rgba(28, 40, 30, 0.06),
+    0 2px 4px 0 rgba(28, 40, 30, 0.04);
+  --shadow-border-hover:
+    0 0 0 1px rgba(28, 40, 30, 0.14),
+    0 1px 2px -1px rgba(28, 40, 30, 0.08),
+    0 2px 4px 0 rgba(28, 40, 30, 0.06);
+}
+
 @layer base {
   html {
+    color-scheme: dark;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     height: 100%;
@@ -57,7 +100,9 @@
     overflow: hidden;
     overflow-x: clip;
     overscroll-behavior: none;
-    background: var(--color-background);
+    background-color: #0a0b0c;
+    background-color: var(--color-background);
+    color: #eef0f2;
     color: var(--color-foreground);
   }
 
@@ -66,6 +111,7 @@
     min-height: 100%;
     overflow: hidden;
     overscroll-behavior: none;
+    background-color: #0a0b0c;
     background:
       radial-gradient(
         900px 480px at 8% -8%,
@@ -75,6 +121,27 @@
       var(--color-background);
     color: var(--color-foreground);
     font-family: var(--font-sans);
+  }
+
+  html.light {
+    background-color: #eef4ef;
+  }
+
+  html.light body {
+    background-color: #eef4ef;
+    background:
+      radial-gradient(
+        980px 520px at 12% -14%,
+        color-mix(in oklab, #b7d0e8 38%, transparent),
+        transparent 58%
+      ),
+      radial-gradient(
+        640px 380px at 94% 4%,
+        color-mix(in oklab, #8fad84 18%, transparent),
+        transparent 52%
+      ),
+      var(--color-background);
+    color: var(--color-foreground);
   }
 
   h1,
@@ -187,34 +254,42 @@
   }
 }
 
-@keyframes boot-shade {
-  0% {
-    opacity: 0;
-  }
-  26% {
-    opacity: 0.24;
-  }
-  74% {
-    opacity: 0.22;
-  }
-  100% {
-    opacity: 0;
-  }
-}
-
 .boot-shade {
   opacity: 0;
-  animation: boot-shade 12s cubic-bezier(0.45, 0, 0.55, 1) both;
+  transform: translateZ(0);
+  will-change: opacity;
+  transition: opacity 0.8s var(--ease-smooth-out);
+}
+
+.boot-shade[data-phase="in"],
+.boot-shade[data-phase="hold"] {
+  opacity: 0.5;
+}
+
+.boot-shade[data-phase="out"],
+.boot-shade[data-phase="wait"] {
+  opacity: 0;
+}
+
+.boot-shade[data-phase="out"] {
+  transition: opacity 4s var(--ease-smooth-out);
 }
 
 .boot-shade-media {
   display: block;
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
   object-position: center top;
   mix-blend-mode: lighten;
   filter: saturate(0.85) brightness(0.82);
+}
+
+html.light .boot-shade-media {
+  mix-blend-mode: multiply;
+  filter: saturate(0.85) brightness(0.9);
 }
 
 .boot-shade-veil {
@@ -235,7 +310,11 @@
   .boot-shade-media {
     object-fit: cover;
     object-position: center 16%;
-    filter: saturate(0.82) brightness(0.88) blur(1px);
+    filter: saturate(0.82) brightness(0.88);
+  }
+
+  html.light .boot-shade-media {
+    filter: saturate(0.82) brightness(0.92);
   }
 
   .boot-shade-veil {
@@ -249,11 +328,11 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
+  .boot-shade {
+    transition-duration: 0.5s;
+  }
+
+  .boot-shade[data-phase="out"] {
+    transition-duration: 1.2s;
   }
 }

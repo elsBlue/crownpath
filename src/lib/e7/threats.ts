@@ -217,7 +217,7 @@ export function wallThreats(heroes: Hero[]): DraftThreat[] {
     add({
       key: "dj-basar",
       label: "DJ Basar",
-      note: "Gives the team Immunity and clears their debuffs. Then removes two of your buffs and turns Barrier into damage. They act again only if someone had Barrier.",
+      note: "Gives the team Immunity and clears their debuffs. If he has Barrier after an enemy skill, Desert Storm inverts your Barrier into damage and cuts Combat Readiness 20%. Extra turn on Barrier is gone.",
       answerTags: ["strip"],
     });
   }
@@ -398,7 +398,7 @@ export function wallThreats(heroes: Hero[]): DraftThreat[] {
     add({
       key: "miseria",
       label: "Miseria",
-      note: "Counter chance is doubled. The unit in Front (rightmost) counters with her. Dawnbreaker cuts everyone's max Health. Fracture stays through revive. Mort turns the counters off.",
+      note: "Counter chance is doubled. The unit in Front (rightmost) counters with her. Dawnbreaker cuts everyone's max Health. Fracture stays through revive. Elbris is +50% Hit Chance and Pen Resist. Mort turns the counters off.",
     });
   }
   if (hasUnique(heroes, "it's far from over") || ids.has("lionheart-cermia")) {
@@ -940,7 +940,7 @@ export function wallThreats(heroes: Hero[]): DraftThreat[] {
     add({
       key: "frida-pass",
       label: "Frida All-Ride",
-      note: "Oasis All-Ride Pass: her first Soulburn and the foremost ally's first Soulburn cost 0 Soul. Aqua Ride is Soulburn, not Dual Attack.",
+      note: "Oasis All-Ride Pass is on everyone at the start. Each hero's first Soulburn costs 0 Soul. Oasis Land also ignores damage sharing for 3 turns. Aqua Ride is Soulburn, not Dual Attack.",
     });
   }
   if (ids.has("fumyr") || hasUnique(heroes, "fruit of knowledge")) {
@@ -1074,7 +1074,70 @@ export function wallThreats(heroes: Hero[]): DraftThreat[] {
     });
   }
 
+  if (ids.has("holiday-yufine")) {
+    add({
+      key: "holiday-yufine",
+      label: "H.Yufine CR",
+      note: "Let's Eat Together reduces Combat Readiness decreases on their whole team by 30%. Her on-turn S1 is AoE that does not Dual Attack. Self evasion is not a miss nest.",
+    });
+  }
+
+  if (ids.has("jack-o")) {
+    add({
+      key: "jack-o-chiron",
+      label: "Jack-O' Chiron",
+      note: "The back-row ally starts with Chain of Chiron: after they attack, random Stun, Cannot Buff, Decrease Hit Chance, or Restrict. On a kill her S3 extra-turns.",
+    });
+  }
+
+  if (ids.has("kawerik")) {
+    add({
+      key: "kawerik-mana",
+      label: "Kawerik Field",
+      note: "Mana Field: while he has Fighting Spirit, skill damage into him is nullified (10 Fighting Spirit per hit). S2 full-pushes cooldowns and extra-turns on a crit.",
+    });
+  }
+
+  if (ids.has("krau")) {
+    add({
+      key: "krau-share",
+      label: "Krau Share",
+      note: "While Summon Ziegfried is off cooldown he takes 25% of an ally's damage. Soulburn makes the nuke AoE; it is not extra turn.",
+    });
+  }
+
+  if (ids.has("lethe")) {
+    add({
+      key: "lethe-frost",
+      label: "Lethe Frostbite",
+      note: "Freeze Over puts Frostbite: no damage reduction or damage share. Call of the Abyss Extincts on kill. Buff duration −2 is not a strip.",
+    });
+  }
+
+  if (ids.has("lilias")) {
+    add({
+      key: "lilias-suppression",
+      label: "Lilias Suppression",
+      note: "After a non-attack skill she cleanses herself and Provokes that enemy. S3 hits with your highest Attack and cuts Combat Readiness 25%.",
+    });
+  }
+
+  if (ids.has("lua")) {
+    add({
+      key: "lua-beguile",
+      label: "Lua Beguile",
+      note: "Sweet Talk Beguiles: at the end of that unit's turn their allies take 10% max HP. S2 is strip, Sleep, and extra turn.",
+    });
+  }
+
   const rank: Record<string, number> = {
+    "lua-beguile": 10,
+    "lilias-suppression": 10,
+    "lethe-frost": 10,
+    "krau-share": 10,
+    "kawerik-mana": 10,
+    "jack-o-chiron": 10,
+    "holiday-yufine": 10,
     "renoa-dirge": 10,
     speedcap: 0,
     "first-cycle": 1,

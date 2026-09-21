@@ -7,7 +7,7 @@ import { heroEffects } from "./effects";
 import type { ScoutMode } from "./formation";
 import { isOwnerIdentity } from "./owner";
 import { DEFAULT_VP } from "./ranks";
-import { ARCHETYPE_META, PRESET_DEFENSES, RECIPES } from "./recipes";
+import { PRESET_DEFENSES, RECIPES } from "./recipes";
 import { BATCH_MAX, PREFER_SLOTS, type HeroDraft } from "./ingest";
 import type {
   ArchetypeId,
@@ -15,17 +15,14 @@ import type {
   GuildMember,
   AdminLogRow,
   Hero,
-  MatchLog,
   MemberRole,
   Recipe,
   RecipeSource,
-  RecipeStat,
   RosterEntry,
   SlotNeed,
   StrategyIdea,
   StrategyIdeaStatus,
   UniqueEffect,
-  WallStat,
   Notice,
   NoticeKind,
 } from "./types";
@@ -601,7 +598,6 @@ export type ArenaPayload = {
   scoutMode: ScoutMode;
   lastTeam: string[];
   roster: Record<string, RosterEntry>;
-  matches: MatchLog[];
   role: MemberRole;
   displayName: string | null;
   email: string | null;
@@ -632,14 +628,6 @@ export const getArena = createServerFn({ method: "GET" })
       await sql`update profiles set role = 'admin' where user_id = ${context.userId}`;
     }
     const role: MemberRole = owner || profiles[0]?.role === "admin" ? "admin" : "member";
-    const matchRows = await sql<Record<string, unknown>>`
-      select id, enemy, team, won, vp_delta, note, recipe_id, recipe_name, archetype,
-        (extract(epoch from created_at) * 1000)::bigint as at
-      from matches
-      where user_id = ${context.userId}
-      order by created_at desc
-      limit 80
-    `;
     const row = states[0];
     const scout = unpackScout(row?.enemy);
     return {
@@ -656,18 +644,6 @@ export const getArena = createServerFn({ method: "GET" })
       role,
       displayName: profiles[0]?.ingame_name || profiles[0]?.display_name || mails[0]?.name || null,
       email: mails[0]?.email ?? null,
-      matches: matchRows.map((m) => ({
-        id: String(m.id),
-        at: Number(m.at ?? Date.now()),
-        enemy: asStringList(m.enemy),
-        team: asStringList(m.team),
-        won: Boolean(m.won),
-        vpDelta: Number(m.vp_delta ?? 0),
-        note: String(m.note ?? ""),
-        recipeId: m.recipe_id ? String(m.recipe_id) : undefined,
-        recipeName: m.recipe_name ? String(m.recipe_name) : undefined,
-        archetype: m.archetype ? (String(m.archetype) as ArchetypeId) : undefined,
-      })),
     };
   });
 
@@ -714,88 +690,6 @@ export const saveArena = createServerFn({ method: "POST" })
         roster = excluded.roster,
         updated_at = now()
     `;
-    return { ok: true as const };
-  });
-
-const matchSchema = z.object({
-  id: z.string().min(1),
-  at: z.number().optional(),
-  enemy: z.array(z.string()).max(4),
-  team: z.array(z.string()).max(4),
-  won: z.boolean(),
-  vpDelta: z.number().int(),
-  note: z.string().max(280).optional(),
-  recipeId: z.string().optional(),
-  recipeName: z.string().optional(),
-  archetype: z.string().optional(),
-});
-
-export const saveMatch = createServerFn({ method: "POST" })
-  .middleware([authMiddleware])
-  .validator(matchSchema)
-  .handler(async ({ context, data }) => {
-    await ensureProfile(context.userId);
-    const sql = await getSql();
-    const at = new Date(data.at ?? Date.now()).toISOString();
-    await sql`
-      insert into matches (id, user_id, enemy, team, won, vp_delta, note, recipe_id, recipe_name, archetype, created_at)
-      values (
-        ${data.id}, ${context.userId},
-        ${JSON.stringify(data.enemy)}::jsonb, ${JSON.stringify(data.team)}::jsonb,
-        ${data.won}, ${data.vpDelta}, ${data.note ?? ""},
-        ${data.recipeId ?? null}, ${data.recipeName ?? null}, ${data.archetype ?? null},
-        ${at}
-      )
-      on conflict (id) do nothing
-    `;
-    if (data.recipeId) {
-      const win = data.won ? 1 : 0;
-      const loss = data.won ? 0 : 1;
-      await sql`
-        insert into recipe_stats (recipe_id, wins, losses, last_at)
-        values (${data.recipeId}, ${win}, ${loss}, now())
-        on conflict (recipe_id) do update set
-          wins = recipe_stats.wins + excluded.wins,
-          losses = recipe_stats.losses + excluded.losses,
-          last_at = now()
-      `;
-    }
-    if (data.archetype) {
-      const win = data.won ? 1 : 0;
-      const loss = data.won ? 0 : 1;
-      await sql`
-        insert into wall_stats (archetype, wins, losses, last_at)
-        values (${data.archetype}, ${win}, ${loss}, now())
-        on conflict (archetype) do update set
-          wins = wall_stats.wins + excluded.wins,
-          losses = wall_stats.losses + excluded.losses,
-          last_at = now()
-      `;
-    }
-    await sql`
-      update arena_state
-      set vp = greatest(800, least(6000, vp + ${data.vpDelta})),
-          last_team = ${JSON.stringify(padFour(data.team))}::jsonb,
-          updated_at = now()
-      where user_id = ${context.userId}
-    `;
-    return { ok: true as const };
-  });
-
-export const removeMatch = createServerFn({ method: "POST" })
-  .middleware([authMiddleware])
-  .validator(z.object({ id: z.string().min(1) }))
-  .handler(async ({ context, data }) => {
-    const sql = await getSql();
-    await sql`delete from matches where id = ${data.id} and user_id = ${context.userId}`;
-    return { ok: true as const };
-  });
-
-export const clearMatches = createServerFn({ method: "POST" })
-  .middleware([authMiddleware])
-  .handler(async ({ context }) => {
-    const sql = await getSql();
-    await sql`delete from matches where user_id = ${context.userId}`;
     return { ok: true as const };
   });
 
@@ -1108,42 +1002,6 @@ export const listAdminLog = createServerFn({ method: "GET" })
         summary: eventSummary(r.action, names),
       };
     });
-  });
-
-export const getAnalytics = createServerFn({ method: "GET" })
-  .middleware([authMiddleware])
-  .handler(async ({ context }): Promise<{ recipes: RecipeStat[]; walls: WallStat[] }> => {
-    await requireAdmin(context.userId);
-    const sql = await getSql();
-    const catalog = await loadCatalog();
-    const stats = await sql<{ recipe_id: string; wins: number; losses: number }>`
-      select recipe_id, wins, losses from recipe_stats
-    `;
-    const byId = new Map(stats.map((s) => [s.recipe_id, s]));
-    const recipes: RecipeStat[] = catalog.recipes
-      .map((r) => ({
-        id: r.id,
-        name: r.name,
-        author: r.author || "Catalog",
-        source: r.source ?? "seed",
-        wins: Number(byId.get(r.id)?.wins ?? 0),
-        losses: Number(byId.get(r.id)?.losses ?? 0),
-      }))
-      .sort((a, b) => b.wins + b.losses - (a.wins + a.losses) || a.name.localeCompare(b.name));
-
-    const wallsRaw = await sql<{ archetype: string; wins: number; losses: number }>`
-      select archetype, wins, losses from wall_stats
-    `;
-    const walls: WallStat[] = (Object.keys(ARCHETYPE_META) as ArchetypeId[]).map((id) => {
-      const row = wallsRaw.find((w) => w.archetype === id);
-      return {
-        archetype: id,
-        title: ARCHETYPE_META[id].title,
-        wins: Number(row?.wins ?? 0),
-        losses: Number(row?.losses ?? 0),
-      };
-    });
-    return { recipes, walls };
   });
 
 const IDEA_STATUSES: StrategyIdeaStatus[] = ["inbox", "keep", "skip", "later"];
@@ -1475,17 +1333,6 @@ export const draftNoticeFromLog = createServerFn({ method: "GET" })
     return lines.join("\n");
   });
 
-const GROQ_SETTING = "groq_api_key";
-
-async function readGroqKey(): Promise<string> {
-  const { readLocalGroqKey } = await import("./ingest-groq.server");
-  const local = readLocalGroqKey();
-  if (local) return local;
-  const sql = await getSql();
-  const rows = await sql<{ value: string }>`select value from owner_settings where key = ${GROQ_SETTING}`;
-  return rows[0]?.value?.trim() || "";
-}
-
 function draftId(batchDate: string, heroId: string) {
   return `${batchDate}:${heroId}`;
 }
@@ -1519,39 +1366,6 @@ const draftSchema = z.object({
   matched: z.boolean(),
 });
 
-export const ingestKeyStatus = createServerFn({ method: "GET" })
-  .middleware([authMiddleware])
-  .handler(async ({ context }) => {
-    await requireAdmin(context.userId);
-    return { configured: false };
-  });
-
-export const setIngestKey = createServerFn({ method: "POST" })
-  .middleware([authMiddleware])
-  .validator(z.object({ key: z.string().max(200) }))
-  .handler(async ({ context, data }) => {
-    await requireOwner(context.userId);
-    const key = data.key.trim();
-    if (key && !key.startsWith("gsk_")) throw new Error("Groq keys start with gsk_");
-    const sql = await getSql();
-    if (key) {
-      await sql`
-        insert into owner_settings (key, value, updated_at)
-        values (${GROQ_SETTING}, ${key}, now())
-        on conflict (key) do update set value = excluded.value, updated_at = now()
-      `;
-    } else {
-      await sql`delete from owner_settings where key = ${GROQ_SETTING}`;
-    }
-    const { writeLocalGroqKey } = await import("./ingest-groq.server");
-    try {
-      writeLocalGroqKey(key);
-    } catch {
-      /* sandbox snapshot may be read-only; DB is enough */
-    }
-    return { configured: Boolean(key) };
-  });
-
 export const listDrafts = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
   .handler(async ({ context }): Promise<HeroDraft[]> => {
@@ -1569,7 +1383,7 @@ export const extractKits = createServerFn({ method: "POST" })
     z.object({
       text: z.string().min(20).max(40000),
       checkedAt: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
-      mode: z.enum(["kit", "json"]).default("kit"),
+      mode: z.enum(["kit", "json"]).default("json"),
     }),
   )
   .handler(async ({ context, data }): Promise<{ heroes: HeroDraft[]; model?: string; checkedAt: string }> => {

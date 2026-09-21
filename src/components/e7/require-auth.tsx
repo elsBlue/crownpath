@@ -1,12 +1,11 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { Navigate } from "@tanstack/react-router";
 import { RedirectToSignIn } from "@/lib/auth/gates";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
+import { bootAlreadyPlayed } from "@/lib/e7/boot";
 import { isOwnerIdentity } from "@/lib/e7/owner";
 import { useArenaStore } from "@/lib/e7/store";
 import { BootScreen } from "./boot-screen";
-
-const INTRO_MS = 11600;
 
 export function RequireAuth({
   children,
@@ -19,24 +18,20 @@ export function RequireAuth({
   const hydrated = useArenaStore((s) => s.hydrated);
   const role = useArenaStore((s) => s.role);
   const email = useArenaStore((s) => s.email);
-  const [introDone, setIntroDone] = useState(false);
+  const [introDone, setIntroDone] = useState(() => bootAlreadyPlayed());
 
-  useEffect(() => {
-    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (reduced || sessionStorage.getItem("crownpath-shade") === "1") {
-      setIntroDone(true);
-      return;
-    }
-    const timer = window.setTimeout(() => {
-      sessionStorage.setItem("crownpath-shade", "1");
-      setIntroDone(true);
-    }, INTRO_MS);
-    return () => window.clearTimeout(timer);
-  }, []);
+  const ready = !isPending && !!user && hydrated;
+  const showBoot = isPending || (user && (!hydrated || !introDone));
 
-  if (isPending) return <BootScreen />;
+  if (showBoot) {
+    return (
+      <BootScreen
+        canLeave={ready}
+        onFinished={() => setIntroDone(true)}
+      />
+    );
+  }
   if (!user) return <RedirectToSignIn />;
-  if (!hydrated || !introDone) return <BootScreen />;
   if (
     admin &&
     role !== "admin" &&

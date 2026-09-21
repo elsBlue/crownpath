@@ -220,6 +220,12 @@ export const EE_BY_HERO: Record<string, ExclusiveGear> = {
       { skill: "Shield of Holy Spirit", effect: "Recovers Health of all allies proportional to the caster's max Health when using Shield of Holy Spirit." },
     ],
   },
+  "desert-jewel-basar": {
+    name: "Solar Blessing",
+    options: [
+      { skill: "Bastet Roar", effect: "When using Bastet Roar, grants Indomitable to all allies for 2 turns." },
+    ],
+  },
   "destina": {
     name: "Ruele's Sad Promise",
     options: [
@@ -339,8 +345,8 @@ export const EE_BY_HERO: Record<string, ExclusiveGear> = {
   "kawerik": {
     name: "Proof of Choice",
     options: [
-      { skill: "Dimensional Explosion", effect: "Increases Attack of the caster for 2 turns before attacking when using Dimensional Explosion." },
-      { skill: "Dimensional Explosion", effect: "Inflicts decreased Hit Chance for 1 turn when using Dimensional Explosion." },
+      { skill: "Dimensional Explosion", effect: "Increases Attack of the caster for 3 turns before attacking when using Dimensional Explosion." },
+      { skill: "Dimensional Explosion", effect: "Inflicts silence for 1 turn when using Dimensional Explosion." },
       { skill: "Dimensional Explosion", effect: "Damage dealt is increased by 20% when using Dimensional Explosion." },
     ],
   },
@@ -494,6 +500,12 @@ export const EE_BY_HERO: Record<string, ExclusiveGear> = {
       { skill: "Dragon Dive", effect: "Increases Dragon Dive's amount recovered by 20%." },
       { skill: "Dragon Buster", effect: "Increases damage dealt by Dragon Buster by 10%." },
       { skill: "Dragon Fear", effect: "When an enemy is defeated with Dragon Fear, acquires 1 additional Focus." },
+    ],
+  },
+  "monarch-of-the-sword-iseria": {
+    name: "Trace of Dawn",
+    options: [
+      { skill: "Elbris's Successor", effect: "Increases the amount of Hit Chance and Penetration Resistance increased by Elbris's Successor by 30%." },
     ],
   },
   "mort": {

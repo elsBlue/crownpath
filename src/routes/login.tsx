@@ -2,6 +2,8 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { Brand } from "@/components/e7/brand";
 import { BootScreen } from "@/components/e7/boot-screen";
+import { Atmosphere } from "@/components/e7/atmosphere";
+import { ThemeToggle } from "@/components/e7/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -31,10 +33,10 @@ function Login() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  if (isPending) return <BootScreen label="Checking session…" />;
+  if (isPending) return <BootScreen label="Checking session…" play={false} />;
   if (user) {
     void navigate({ to: "/" });
-    return <BootScreen />;
+    return <BootScreen play={false} />;
   }
 
   async function onEmail(e: React.FormEvent) {
@@ -66,8 +68,12 @@ function Login() {
   }
 
   return (
-    <main className="grid h-full min-h-full place-items-center bg-background px-4 text-foreground">
-      <div className="w-full max-w-sm">
+    <main className="relative grid h-full min-h-full place-items-center bg-background px-4 text-foreground">
+      <Atmosphere />
+      <div className="absolute top-3 right-3 z-20">
+        <ThemeToggle />
+      </div>
+      <div className="relative z-10 w-full max-w-sm">
         <Brand size="lg" />
         <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
           Sign in to save your roster, settings, and results on this account.

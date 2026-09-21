@@ -124,9 +124,6 @@ export function RosterView() {
               <FilterChip on={false} onClick={() => loadPresetRoster("challenger")}>
                 Full kit
               </FilterChip>
-              <FilterChip on={false} onClick={() => loadPresetRoster("starter")}>
-                Starter
-              </FilterChip>
               <button
                 type="button"
                 className="h-11 px-3 text-sm text-muted-foreground"

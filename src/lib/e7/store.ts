@@ -1,10 +1,10 @@
 import { create } from "zustand";
-import { SAMPLE_ROSTER, STARTER_ROSTER } from "./heroes";
+import { SAMPLE_ROSTER } from "./heroes";
 import { DEFAULT_VP } from "./ranks";
-import { clearMatches as apiClear, removeMatch as apiRemove, saveArena, saveMatch } from "./api";
+import { saveArena } from "./api";
 import type { ArenaPayload } from "./api";
 import type { ScoutMode } from "./formation";
-import type { MatchLog, MemberRole, RosterEntry } from "./types";
+import type { MemberRole, RosterEntry } from "./types";
 
 type ArenaState = {
   hydrated: boolean;
@@ -19,7 +19,6 @@ type ArenaState = {
   gwRound: 1 | 2;
   lastTeam: string[];
   vp: number;
-  matches: MatchLog[];
   restrictToRoster: boolean;
   applyServer: (payload: ArenaPayload) => void;
   resetSession: () => void;
@@ -29,14 +28,9 @@ type ArenaState = {
   setEnemySlot: (index: number, id: string | null) => void;
   setEnemy: (ids: string[]) => void;
   clearWall: () => void;
-  setLastTeam: (ids: string[]) => void;
   toggleBuilt: (id: string) => void;
-  loadPresetRoster: (kind: "challenger" | "starter" | "clear") => void;
+  loadPresetRoster: (kind: "challenger" | "clear") => void;
   setRestrict: (v: boolean) => void;
-  setVp: (vp: number) => void;
-  logMatch: (entry: Omit<MatchLog, "id" | "at"> & { at?: number }) => void;
-  removeMatch: (id: string) => void;
-  clearMatches: () => void;
 };
 
 function pad(ids: string[], n: number): string[] {
@@ -84,7 +78,6 @@ const emptyState = {
   gwRound: 1 as 1 | 2,
   lastTeam: emptyArena(),
   vp: DEFAULT_VP,
-  matches: [] as MatchLog[],
   restrictToRoster: false,
 };
 
@@ -101,7 +94,7 @@ function persistState() {
         vp: s.vp,
         restrictToRoster: s.restrictToRoster,
         enemy: s.enemyArena,
-        lastTeam: s.lastTeam,
+        lastTeam: emptyArena(),
         roster: s.roster,
         scoutMode: s.scoutMode,
         enemyGw: s.enemyGw,
@@ -135,7 +128,6 @@ export const useArenaStore = create<ArenaState>((set, get) => ({
       enemy: mode === "gw" ? (gwRound === 2 ? enemyGw2 : enemyGw) : enemyArena,
       lastTeam: payload.lastTeam,
       vp: payload.vp,
-      matches: payload.matches,
       restrictToRoster: payload.restrictToRoster,
     });
   },
@@ -203,10 +195,6 @@ export const useArenaStore = create<ArenaState>((set, get) => ({
     });
     persistState();
   },
-  setLastTeam: (ids) => {
-    set({ lastTeam: ids.slice(0, 4) });
-    persistState();
-  },
   toggleBuilt: (id) => {
     const roster = { ...get().roster };
     const cur = roster[id] ?? { owned: false, built: false };
@@ -218,57 +206,12 @@ export const useArenaStore = create<ArenaState>((set, get) => ({
   },
   loadPresetRoster: (kind) => {
     if (kind === "clear") set({ roster: {} });
-    else if (kind === "starter") set({ roster: rosterFrom(STARTER_ROSTER) });
     else set({ roster: rosterFrom(SAMPLE_ROSTER) });
     persistState();
   },
   setRestrict: (v) => {
     set({ restrictToRoster: v });
     persistState();
-  },
-  setVp: (vp) => {
-    set({ vp: Math.max(800, Math.min(6000, Math.round(vp))) });
-    persistState();
-  },
-  logMatch: (entry) => {
-    const match: MatchLog = {
-      id: crypto.randomUUID(),
-      at: entry.at ?? Date.now(),
-      enemy: entry.enemy,
-      team: entry.team,
-      won: entry.won,
-      vpDelta: entry.vpDelta,
-      note: entry.note,
-      recipeId: entry.recipeId,
-      recipeName: entry.recipeName,
-      archetype: entry.archetype,
-    };
-    const vp = Math.max(800, get().vp + entry.vpDelta);
-    set({ matches: [match, ...get().matches].slice(0, 80), vp, lastTeam: entry.team });
-    void saveMatch({
-      data: {
-        id: match.id,
-        at: match.at,
-        enemy: match.enemy,
-        team: match.team,
-        won: match.won,
-        vpDelta: match.vpDelta,
-        note: match.note,
-        recipeId: match.recipeId,
-        recipeName: match.recipeName,
-        archetype: match.archetype,
-      },
-    }).catch(() => {
-      /* local log still visible */
-    });
-  },
-  removeMatch: (id) => {
-    set({ matches: get().matches.filter((m) => m.id !== id) });
-    void apiRemove({ data: { id } }).catch(() => undefined);
-  },
-  clearMatches: () => {
-    set({ matches: [] });
-    void apiClear().catch(() => undefined);
   },
 }));
 

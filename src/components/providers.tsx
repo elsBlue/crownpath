@@ -6,6 +6,14 @@ import { getArena, getCatalog } from "@/lib/e7/api";
 import { useCatalog } from "@/lib/e7/catalog";
 import { useNotices } from "@/lib/e7/notices";
 import { useArenaStore } from "@/lib/e7/store";
+import { hydrateTheme } from "@/lib/e7/theme";
+
+function ThemeHydrate() {
+  useEffect(() => {
+    hydrateTheme();
+  }, []);
+  return null;
+}
 
 function HydrateArena() {
   const { user, isPending } = useCurrentUserState();
@@ -45,6 +53,7 @@ function HydrateArena() {
 export function Providers({ children }: { children: ReactNode }) {
   return (
     <TooltipProvider>
+      <ThemeHydrate />
       <HydrateArena />
       {children}
       <Toaster />

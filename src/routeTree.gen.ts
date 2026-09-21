@@ -11,8 +11,6 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminRouteImport } from './routes/admin'
-import { Route as DefenseRouteImport } from './routes/defense'
-import { Route as LogRouteImport } from './routes/log'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as RosterRouteImport } from './routes/roster'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
@@ -25,16 +23,6 @@ const IndexRoute = IndexRouteImport.update({
 const AdminRoute = AdminRouteImport.update({
   id: '/admin',
   path: '/admin',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DefenseRoute = DefenseRouteImport.update({
-  id: '/defense',
-  path: '/defense',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LogRoute = LogRouteImport.update({
-  id: '/log',
-  path: '/log',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -56,8 +44,6 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
-  '/defense': typeof DefenseRoute
-  '/log': typeof LogRoute
   '/login': typeof LoginRoute
   '/roster': typeof RosterRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -65,8 +51,6 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
-  '/defense': typeof DefenseRoute
-  '/log': typeof LogRoute
   '/login': typeof LoginRoute
   '/roster': typeof RosterRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -75,35 +59,21 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
-  '/defense': typeof DefenseRoute
-  '/log': typeof LogRoute
   '/login': typeof LoginRoute
   '/roster': typeof RosterRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths:
-    '/' | '/admin' | '/defense' | '/log' | '/login' | '/roster' | '/api/auth/$'
+  fullPaths: '/' | '/admin' | '/login' | '/roster' | '/api/auth/$'
   fileRoutesByTo: FileRoutesByTo
-  to:
-    '/' | '/admin' | '/defense' | '/log' | '/login' | '/roster' | '/api/auth/$'
-  id:
-    | '__root__'
-    | '/'
-    | '/admin'
-    | '/defense'
-    | '/log'
-    | '/login'
-    | '/roster'
-    | '/api/auth/$'
+  to: '/' | '/admin' | '/login' | '/roster' | '/api/auth/$'
+  id: '__root__' | '/' | '/admin' | '/login' | '/roster' | '/api/auth/$'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRoute
-  DefenseRoute: typeof DefenseRoute
-  LogRoute: typeof LogRoute
   LoginRoute: typeof LoginRoute
   RosterRoute: typeof RosterRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
@@ -123,20 +93,6 @@ declare module '@tanstack/react-router' {
       path: '/admin'
       fullPath: '/admin'
       preLoaderRoute: typeof AdminRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/defense': {
-      id: '/defense'
-      path: '/defense'
-      fullPath: '/defense'
-      preLoaderRoute: typeof DefenseRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/log': {
-      id: '/log'
-      path: '/log'
-      fullPath: '/log'
-      preLoaderRoute: typeof LogRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -166,8 +122,6 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
-  DefenseRoute: DefenseRoute,
-  LogRoute: LogRoute,
   LoginRoute: LoginRoute,
   RosterRoute: RosterRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,

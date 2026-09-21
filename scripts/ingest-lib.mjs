@@ -113,52 +113,6 @@ export const FLAG_IDS = [
   "self-skill-nullifier-not-fallen-cecilia",
 ];
 
-export const GROQ_MODELS = ["openai/gpt-oss-20b", "qwen/qwen3.8-27b", "openai/gpt-oss-120b"];
-
-export const GROQ_SYSTEM_PROMPT = `You extract Epic Seven Journal kits into Crownpath hero drafts.
-Return ONLY a JSON object: {"heroes":[...]} with at most 10 heroes.
-Do not invent mechanics. If the kit does not say it, omit it.
-
-Each hero:
-{
-  "name": string,
-  "short": string (abbrev like E.Ilynav, max 24 chars),
-  "element": fire|ice|earth|light|dark,
-  "class": knight|warrior|mage|ranger|thief|soulweaver,
-  "tier": SS|S|A|B (PvP use, not star rarity),
-  "rarity": 5|4|3,
-  "baseSpeed": integer from the Journal (do not guess; omit if missing),
-  "roles": draft jobs from [${ROLE_IDS.join(",")}],
-  "tags": mechanics from [${TAG_IDS.join(",")}],
-  "effects": optional extra engine effects from [${EFFECT_IDS.join(",")}] — omit unless a special case (always-crit, damage-sharing, ignore-damage-sharing, dual-attack, buff-dispel, enemy-cd-increase),
-  "buffs": exact in-game buff names,
-  "debuffs": exact in-game debuff names,
-  "uniqueEffects": [{"name":"tooltip name","text":"short tooltip; self-only vs team-wide must be obvious"}],
-  "kit": ONE paragraph, max 800 chars: S1 / S2 / S3, Soulburn, extra attack vs Dual Attack, first-fight cooldowns. Include the callout phrases below when they apply.
-  "jobFor": who they are on OUR team. Two sentences max. No "if the wall has…".
-  "watch": null, OR {"key":"kebab-id","label":"short","note":"how this changes play on a wall"} — only if the unique is play-changing (first-cycle extra-turn opener, miss-but-debuffs, team-wide unique, immortality window, redirected provoke, extra/counter/DA reaction). Skip imprint, self buff, 25% stun, flavor CR.
-  "prefer": subset of [${PREFER_SLOTS.join(",")}] — only the slot they should win. Empty unless obvious. Never Frontline/Sustain unless they ARE that tank/reviver (do not steal Mort or Diene).
-  "flags": subset of [${FLAG_IDS.join(",")}]
-}
-
-HARD RULES:
-- Seal ≠ Cannot Buff. "Cannot Buff" is a debuff, not tag "seal".
-- Extra attack ≠ Dual Attack. Do not tag dual-attack unless the kit says Dual Attack.
-- Buff duration −1 ≠ strip. Tag strip / effect buff-dispel only when buffs are removed.
-- Self evasion or self Stealth ≠ miss nest. Do not tag evade or role evasion unless allies also miss / team miss chance.
-- Extra turn from Soulburn only ≠ opener. Role opener + tag extra-turn only when a SKILL grants extra turn (not Soulburn-only). If Soulburn-only, flag extra-turn-soulburn-only and write "Extra turn is Soulburn only" in kit.
-- CR reduction ≠ Speed cap. Role speedcap only for a real cap (Harsetti-class).
-- Self Skill Nullifier ≠ Fallen Cecilia / team Skill Nullifier.
-- Skill Effect Nullifier ≠ Skill Nullifier.
-- Do not add Watch for generic stun/sleep/seal/cannot-buff — those already fire.
-
-Callouts to put in kit/unique text when true:
-- "Extra attack is not Dual Attack"
-- "Self evasion is not a miss nest" / "Self Stealth is not a miss nest"
-- "Buff duration −1 is not a strip"
-- "Extra turn is Soulburn only"
-`;
-
 export function slugify(value) {
   return String(value || "")
     .toLowerCase()
@@ -578,7 +532,7 @@ export function formatHeroObject(draft, indent = "  ") {
 export function applyHeroObject(src, draft) {
   const range = braceRange(src, draft.id);
   if (!range) return insertHeroObject(src, draft);
-  const indent = indentOf(src, range.start);
+  const indent = "  ";
   const existing = src.slice(range.start, range.end);
   const icon = existing.match(/\bicon:\s*("[^"]*")/);
   if (icon && !draft.icon) draft.icon = JSON.parse(icon[1]);
@@ -676,7 +630,7 @@ export function applyDraftsToRoot(root, payload, opts = {}) {
   let heroesSrc = readFileSync(heroesPath, "utf8");
   const startLines = heroesSrc.split("\n").length;
   if (startLines < floor) throw new Error(`heroes.ts is ${startLines} lines — abort`);
-  const startCount = (heroesSrc.match(/\n    id: "/g) || []).length;
+  const startCount = (heroesSrc.match(/\n\s+id: "/g) || []).length;
 
   const drafts = payload.heroes || [];
   if (drafts.length > BATCH_MAX) throw new Error(`batch max is ${BATCH_MAX}`);
@@ -694,7 +648,7 @@ export function applyDraftsToRoot(root, payload, opts = {}) {
   }
   const endLines = heroesSrc.split("\n").length;
   if (endLines < floor) throw new Error(`after patch ${endLines} lines — abort write`);
-  const endCount = (heroesSrc.match(/\n    id: "/g) || []).length;
+  const endCount = (heroesSrc.match(/\n\s+id: "/g) || []).length;
   if (endCount !== startCount + inserted) throw new Error(`hero count ${endCount} != ${startCount + inserted}`);
   if (opts.expectCount && endCount !== opts.expectCount) {
     throw new Error(`hero count ${endCount} != ${opts.expectCount}`);

@@ -1,9 +1,11 @@
 import { Toaster as Sonner } from "sonner";
+import { useTheme } from "@/lib/e7/theme";
 
 function Toaster() {
+  const theme = useTheme((s) => s.theme);
   return (
     <Sonner
-      theme="dark"
+      theme={theme}
       position="top-center"
       visibleToasts={3}
       className="toaster group"

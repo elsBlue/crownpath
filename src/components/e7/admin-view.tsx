@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { Link } from "@tanstack/react-router";
 import { Star } from "lucide-react";
 import { toast } from "sonner";
 import { HeroPortrait } from "@/components/hero-portrait";
@@ -14,7 +13,6 @@ import {
   StatStrip,
   TOOLBAR,
 } from "@/components/e7/chrome";
-import { FitsKit } from "@/components/e7/fits-kit";
 import { IngestAdmin } from "@/components/e7/ingest-view";
 import { JumpRail, groupByLetter } from "@/components/e7/jump-rail";
 import { Button } from "@/components/ui/button";
@@ -42,7 +40,6 @@ import {
   deleteRecipe,
   deleteNotice,
   draftNoticeFromLog,
-  getAnalytics,
   listAdminLog,
   listAdminNotices,
   listMembers,
@@ -64,7 +61,6 @@ import { fileToHeroIcon } from "@/lib/e7/icon";
 import { isOwnerIdentity } from "@/lib/e7/owner";
 import { useNotices } from "@/lib/e7/notices";
 import { ARCHETYPE_META } from "@/lib/e7/recipes";
-import { downloadJson } from "@/lib/e7/export-stats";
 import { useArenaStore } from "@/lib/e7/store";
 import { useCurrentUser } from "@/lib/auth/use-current-user";
 import {
@@ -81,17 +77,15 @@ import {
   type Notice,
   type NoticeKind,
   type Recipe,
-  type RecipeStat,
   type SlotNeed,
   type StrategyIdea,
   type StrategyIdeaStatus,
-  type WallStat,
   NOTICE_KIND_LABEL,
   NOTICE_KINDS,
 } from "@/lib/e7/types";
 import { cn, daysAgoLabel } from "@/lib/utils";
 
-type Tab = "units" | "ingest" | "strategies" | "ideas" | "updates" | "walls" | "members" | "log" | "stats";
+type Tab = "units" | "ingest" | "strategies" | "ideas" | "updates" | "walls" | "members" | "log";
 
 function slugify(value: string) {
   return value
@@ -179,7 +173,6 @@ export function AdminView() {
             ["walls", "Examples"],
             ["members", "Members"],
             ["log", "Log"],
-            ["stats", "Stats"],
           ] as const
         ).map(([id, label]) => (
           <FilterChip key={id} on={tab === id} onClick={() => setTab(id)}>
@@ -195,7 +188,6 @@ export function AdminView() {
       {tab === "walls" ? <PresetAdmin /> : null}
       {tab === "members" ? <MemberAdmin /> : null}
       {tab === "log" ? <ActivityLog /> : null}
-      {tab === "stats" ? <AnalyticsPanel /> : null}
     </div>
   );
 }
@@ -740,11 +732,6 @@ function HeroForm({
           <Textarea value={form.kit} onChange={(e) => patch({ kit: e.target.value })} />
         </Field>
       </div>
-      {!isNew && form.id ? (
-        <div className="mt-6 border-t border-border/80 pt-4">
-          <FitsKit hero={form} />
-        </div>
-      ) : null}
       <label className="mt-4 flex items-start gap-3 rounded-xl bg-secondary/60 px-4 py-3">
         <Checkbox
           checked={Boolean(form.verified)}
@@ -1807,105 +1794,6 @@ function ActivityLog() {
         </li>
       ))}
     </ul>
-  );
-}
-
-function rate(wins: number, losses: number): string {
-  const n = wins + losses;
-  if (n === 0) return "—";
-  return `${Math.round((wins / n) * 100)}%`;
-}
-
-function AnalyticsPanel() {
-  const [data, setData] = useState<{ recipes: RecipeStat[]; walls: WallStat[] } | null>(null);
-
-  useEffect(() => {
-    void getAnalytics()
-      .then(setData)
-      .catch(() => {
-        toast.error("Could not load stats");
-        setData({ recipes: [], walls: [] });
-      });
-  }, []);
-
-  if (!data) {
-    return <p className="text-sm text-muted-foreground">Loading stats…</p>;
-  }
-
-  const fights = data.recipes.reduce((s, r) => s + r.wins + r.losses, 0);
-
-  return (
-    <div className="flex flex-col gap-6">
-      <p className="text-sm leading-relaxed text-muted-foreground">
-        Guild totals from when Scout still logged W/L — not this device’s fight list.
-        {fights === 0
-          ? " None stored."
-          : ` ${fights} guild fight${fights === 1 ? "" : "s"} on record.`}
-        {" "}
-        Your personal log can be empty while these numbers stay.
-      </p>
-      <div className="flex gap-1">
-        <Button
-          size="sm"
-          variant="ghost"
-          onClick={() => {
-            downloadJson(`crownpath-analytics-${new Date().toISOString().slice(0, 10)}.json`, {
-              app: "crownpath",
-              v: 1,
-              kind: "analytics",
-              exportedAt: new Date().toISOString(),
-              walls: data.walls,
-              recipes: data.recipes,
-            });
-            toast("Saved analytics file");
-          }}
-        >
-          Export
-        </Button>
-        <Button size="sm" variant="ghost" asChild>
-          <Link to="/log">Fight log</Link>
-        </Button>
-      </div>
-      <section>
-        <h2 className="mb-2 text-xs font-medium tracking-[0.14em] text-muted-foreground uppercase">
-          By wall type
-        </h2>
-        <ul className="flex flex-col gap-1">
-          {data.walls.map((w) => (
-            <li
-              key={w.archetype}
-              className="flex items-baseline justify-between gap-3 rounded-xl bg-card px-4 py-3 shadow-[var(--shadow-border)]"
-            >
-              <p className="truncate text-sm">{w.title}</p>
-              <p className="shrink-0 font-mono text-xs tabular-nums text-muted-foreground">
-                {w.wins}W {w.losses}L · {rate(w.wins, w.losses)}
-              </p>
-            </li>
-          ))}
-        </ul>
-      </section>
-      <section>
-        <h2 className="mb-2 text-xs font-medium tracking-[0.14em] text-muted-foreground uppercase">
-          By strategy
-        </h2>
-        <ul className="flex flex-col gap-1">
-          {data.recipes.map((r) => (
-            <li
-              key={r.id}
-              className="flex items-baseline justify-between gap-3 rounded-xl bg-card px-4 py-3 shadow-[var(--shadow-border)]"
-            >
-              <div className="min-w-0">
-                <p className="truncate text-sm">{r.name}</p>
-                <p className="truncate text-xs text-muted-foreground">{r.author}</p>
-              </div>
-              <p className="shrink-0 font-mono text-xs tabular-nums text-muted-foreground">
-                {r.wins}W {r.losses}L · {rate(r.wins, r.losses)}
-              </p>
-            </li>
-          ))}
-        </ul>
-      </section>
-    </div>
   );
 }
 

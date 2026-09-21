@@ -28,7 +28,6 @@ export function ScoutView() {
   const setEnemy = useArenaStore((s) => s.setEnemy);
   const clearWall = useArenaStore((s) => s.clearWall);
   const setEnemySlot = useArenaStore((s) => s.setEnemySlot);
-  const setLastTeam = useArenaStore((s) => s.setLastTeam);
   const presets = useCatalog((s) => s.presets);
   const recipes = useCatalog((s) => s.recipes);
   const heroes = useCatalog((s) => s.heroes);
@@ -61,9 +60,8 @@ export function ScoutView() {
     setWallsOpen(false);
   }, [enemyKey, poolKey, scoutMode]);
 
-  function toggleTeam(id: string, heroIds: string[]) {
+  function toggleTeam(id: string, _heroIds: string[]) {
     setOpenIds((cur) => (cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id]));
-    setLastTeam(heroIds);
   }
 
   const meta = read ? ARCHETYPE_META[read.archetype] : null;
@@ -488,7 +486,9 @@ export function ScoutView() {
               {filled.length < seats
                 ? `Add ${remain} more ${remain === 1 ? "hero" : "heroes"} to the defense. Lineups appear when ${seats} heroes are placed.`
                 : restrict
-                  ? "No lineup from your built units for this wall yet. Refresh is a real option, or turn off Only built units."
+                  ? builtVerified < seats
+                    ? `Only ${builtVerified} verified built ${builtVerified === 1 ? "hero" : "heroes"} — not enough to fill ${seats} seats. Mark more Built on Roster, or turn off Only built units.`
+                    : "No lineup from your built units for this wall yet. Refresh is a real option, or turn off Only built units."
                   : "No lineup from the verified catalog for this wall yet. Refresh is a real option."}
             </CardContent>
           </Card>

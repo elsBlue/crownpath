@@ -321,6 +321,7 @@ function fillRecipe(
   pool: Hero[],
   enemyIds: string[],
   seats: 3 | 4 = 4,
+  flex = false,
 ): {
   picks: { label: string; hero: Hero }[];
   heroIds: string[];
@@ -373,6 +374,24 @@ function fillRecipe(
       missing.push(need.label);
     }
   }
+  if (flex) {
+    for (const need of recipe.slots.slice(0, seats)) {
+      if (picks.some((p) => p.label === need.label)) continue;
+      let best: Hero | null = null;
+      let bestScore = Number.NEGATIVE_INFINITY;
+      for (const hero of pool) {
+        if (used.has(hero.id) || enemy.has(hero.id)) continue;
+        const s = slotScore(hero, need, { offering, ferocious }, used);
+        if (s > bestScore) {
+          best = hero;
+          bestScore = s;
+        }
+      }
+      if (!best) continue;
+      used.add(best.id);
+      picks.push({ label: need.label, hero: best });
+    }
+  }
   return {
     picks,
     heroIds: picks.map((p) => p.hero.id),
@@ -393,7 +412,7 @@ function jobFor(
   const n = hero.name;
   switch (hero.id) {
     case "urban-shadow-choux":
-      return `${n} applies injury to every enemy after each of her attacks, so you do not have to choose a single target.`;
+      return `${n} applies injury to every enemy after each of her attacks, so you do not have to choose a single target. Soulburn pays 40% of Injury already on the target.`;
     case "empyrean-ilynav":
       return `${n} is the injury core. She also cleanses and can hold the front.`;
     case "lone-crescent-bellona":
@@ -401,7 +420,7 @@ function jobFor(
     case "twisted-eidolon-kayron":
       return `${n} injuries on his basic attack, and his counters become area injury. Mort turns those counters off; the additional damage on his third skill still lands on a miss.`;
     case "monarch-of-the-sword-iseria":
-      return `${n} injuries on Sword of Duty (her counter) and on Dawnbreaker. Fracture stacks Attack on her. Doubled counters also fire the foremost ally.`;
+      return `${n} injuries on Sword of Duty and Dawnbreaker. Fracture stacks Attack. Doubled counters also fire the foremost ally. Elbris is +50% Hit Chance and Pen Resist.`;
     case "zahhak":
       return `${n} is single-target injury after an extra turn.`;
     case "new-moon-luna":
@@ -502,7 +521,7 @@ function jobFor(
     case "edward-elric":
       return `${n} Rise! after you hit him while he has a debuff: strip one, a random debuff, Combat Readiness +20%. His third skill ignores damage sharing vs non-boss.`;
     case "elena":
-      return `${n} Consecrated Ground heals everyone after an area attack. Eternally Shining Comet cleanses one, Invincible 1 turn, Increase Effect Resistance 2 turns.`;
+      return `${n} Consecrated Ground cleanses one and heals everyone after an area attack, then she takes 30% Combat Readiness. Eternally Shining Comet is Invincible and Effect Resistance.`;
     case "eligos":
       return `${n} Cloak and Trigger is resource −60%, strip two, Target and Decrease Defense, Combat Readiness −35%. Soulburn ignores Effect Resistance.`;
     case "elphelt":
@@ -530,7 +549,7 @@ function jobFor(
     case "flan":
       return `${n} Advantageous Deal is skill cooldown +1, Decrease Defense, Combat Readiness −15%. Data Monopoly is Increase Attack, Increase Critical Hit Damage, Combat Readiness +30%. Extra turn is Soulburn only.`;
     case "frida":
-      return `${n} Oasis All-Ride Pass: her first Soulburn and the foremost ally's first Soulburn cost 0. Oasis Land cleanses one, Combat Readiness +15%, Increase Attack.`;
+      return `${n} Oasis All-Ride Pass: every ally's first Soulburn costs 0. Oasis Land cleanses one, Combat Readiness +15%, Increase Attack, and ignore sharing for 3 turns.`;
     case "fumyr":
       return `${n} Fruit of Knowledge at full Focus: full strip, Sleep, Decrease Defense. Sensory Dissection strips two, cooldown +1, Combat Readiness −40%. Extra turn is Soulburn only.`;
     case "shepherd-diene":
@@ -596,7 +615,7 @@ function jobFor(
     case "sylvan-sage-vivian":
       return `${n} starts immune to debuffs at full Focus. Hits of 30% max Health spend Focus for damage reduction. Nature's Judgment cuts ally cooldowns by one. Soulburn is area and does not Dual Attack.`;
     case "desert-jewel-basar":
-      return `${n} cleanses everyone and grants Immunity. Desert Storm strips two and inverts Barrier into damage. Extra turn only if a target has Barrier.`;
+      return `${n} cleanses everyone and grants Immunity. If he has Barrier after an enemy skill, Desert Storm inverts Barrier into damage. Extra turn on Barrier is gone.`;
     case "bystander-hwayoung":
       return `${n} is immune to buffs and debuffs. That is not the Immunity buff — strip does not apply. Sura ignores damage sharing and damage reduction on heroes, and Extinction if it kills.`;
     case "disciplinary-prefect-aria":
@@ -695,6 +714,58 @@ function jobFor(
       return `${n} is a max-HP bruiser. She barriers the team on S1, extra-turns only after Focus is full (not turn 1), and hands Morale on S3.`;
     case "renoa":
       return `${n} is a Defense-scaling dark ranger. Dirge Bullets turn buffs and debuffs on her into extra attacks (not Dual Attack), and S3 pushes the team 40% Combat Readiness.`;
+    case "guard-captain-krau":
+      return `${n} is a Defense-scaling fire bruiser. Vigor makes Comet ignore Effect Resistance; Scorching Flare is a no-crit Defense-pen cleave that heals him.`;
+    case "haste":
+      return `${n} is a fire thief stripper. Blood Rend applies Unhealable and Vampiric Touch; Vampiric Seal strips two buffs then bleeds.`;
+    case "holiday-yufine":
+      return `${n} is a fire AoE warrior. On her turn S1 becomes a no-Dual-Attack cleave, and Let's Eat Together blunts Combat Readiness cuts on the team.`;
+    case "hwayoung":
+      return `${n} is a fire bruiser who never crits. Prairie Hawk is self evasion, not a miss nest. S3 cleanses her and can fully penetrate if she out-Attacks.`;
+    case "ilynav":
+      return `${n} is a max-HP injury knight. Punish and Repel inflict injury; Repel also gives the team Critical Hit Damage.`;
+    case "immortal-wukong":
+      return `${n} is an earth bruiser. Non-crits taken stack Attack and Speed; S3 stuns and ignores elemental disadvantage.`;
+    case "iseria":
+      return `${n} is a strip ranger. Oathkeeper resets an ally's cooldowns and grants her extra turn; Full Bloom full-strips then Cannot Buff.`;
+    case "ivana":
+      return `${n} is an anti-immortal healer. She strips Immortality at turn start, then Ignore Sharing and Radiance when an enemy is immortal.`;
+    case "jack-o":
+      return `${n} is a fire warrior. Chain of Chiron sits on the back-row ally; S3 extra-turns if the target dies.`;
+    case "jenua":
+      return `${n} is a fire thief closer. Plan A self-cleanses and Enrages at half Health; Bite penetrates and Extincts on kill.`;
+    case "kane":
+      return `${n} is a fire bruiser. Rage turns S1 into an ignore-ER Bleed cleave; lethal Immortality resets Feast of Predation.`;
+    case "kawerik":
+      return `${n} is a fire strip mage. Mana Field eats Fighting Spirit to nullify skill damage; Dimensional Corridor full-pushes cooldowns and extra-turns on a crit.`;
+    case "kayron":
+      return `${n} is a lost-HP fire thief. Buffed S1 becomes a no-Dual-Attack cleave; Immortal Will saves the first lethal hit and resets Apocalypse.`;
+    case "ken":
+      return `${n} is a max-HP fire bruiser. Vigor makes Celestial Kick ignore Effect Resistance; Phoenix Flurry stuns and puts Vigor up.`;
+    case "kise":
+      return `${n} is an ice thief cleave. Dark Scar pens harder from Stealth; Nocturne self-Stealths and pushes cooldowns twice.`;
+    case "krau":
+      return `${n} is a max-HP ice tank. While Summon Ziegfried is ready he shares 25% of an ally's damage; the nuke pens and cannot crit.`;
+    case "laia":
+      return `${n} is an earth cleanser. While Spirit of Rock is down she Dual Attacks off S1 and ticks her own cooldowns; S2 full-cleanses and shaves ally cooldowns.`;
+    case "landy":
+      return `${n} is an earth ranger cleave. Full Burst pushes the team 25% Combat Readiness and pens at full Fighting Spirit.`;
+    case "lethe":
+      return `${n} is an ice closer. Three Omen call a Defense-pen Extinction nuke; Freeze Over puts Frostbite, which turns damage sharing off.`;
+    case "lidica":
+      return `${n} is a fire opener. Thornbush full-strips and Binds; Public Execution zeroes Combat Readiness and gives the team Skill Nullifier.`;
+    case "lilias":
+      return `${n} is a max-HP fire knight. S1 Dual Attacks a random ally; Suppression provokes whoever just used a non-attack skill.`;
+    case "lilibet":
+      return `${n} is an earth closer. Snip-Snip full-strips and extra-turns on a crit; Soul Cutter pens, self-Nullifies, and Extincts on kill.`;
+    case "lua":
+      return `${n} is an ice strip ranger. Butterfly Reverie sleeps and extra-turns; Sweet Talk Beguiles so the wall damages itself at end of turn.`;
+    case "ludwig":
+      return `${n} is an earth cleave mage. Moonlight Blow stuns and Invincibles him; Call of the Full Moon pens harder while Invincible.`;
+    case "luluca":
+      return `${n} is an ice mage. Rekos's Blessing barriers the team; Wave of Vengeance breaks Defense and stacks her Attack.`;
+    case "luna":
+      return `${n} is an ice warrior. Infinity Slash shaves her own cooldowns; Ragnar Spear pens 50% with elemental advantage.`;
     default:
       break;
   }
@@ -1649,6 +1720,21 @@ function whyFor(recipe: Recipe, read: DefenseRead, filled: Hero[]): string[] {
   }
   return why.slice(0, 3);
 }
+function winconFor(recipe: Recipe, filled: Hero[]): string {
+  const ids = new Set(filled.map((h) => h.id));
+  const named: [string, string][] = [
+    ["harsetti", "Harsetti"],
+    ["belian", "Belian"],
+    ["last-rider-krau", "Last Rider Krau"],
+    ["setsuka", "Setsuka"],
+    ["remnant-violet", "Remnant Violet"],
+    ["little-queen-charlotte", "Little Queen Charlotte"],
+  ];
+  for (const [id, name] of named) {
+    if (recipe.wincon.includes(name) && !ids.has(id)) return recipe.summary;
+  }
+  return recipe.wincon;
+}
 function requirePool() {
   return allHeroes()
     .filter((h) => h.verified)
@@ -1749,20 +1835,22 @@ export function recommendCounters(
 ): CounterTeam[] {
   const read = classifyDefense(enemyIds);
   if (!read) return [];
+  const restricted = Array.isArray(poolIds);
   const wanted = (poolIds ?? requirePool())
     .map((id) => getHero(id))
     .filter((h): h is Hero => Boolean(h && h.verified));
-  const theory = !poolIds || wanted.length < 4;
-  const usable = wanted.length >= 3 ? wanted : heroesOf(requirePool());
-  const isTheory = theory || wanted.length < 4;
+  if (restricted && wanted.length < 2) return [];
+  const usable = wanted;
+  const isTheory = !restricted;
+  const minFilled = restricted ? Math.min(3, seats) : 3;
   const results = [];
   for (const recipe of recipesFor(read)) {
     const reviveThreat =
       read.roles.includes("revive") ||
       read.uniqueEffects.some((u) => isReviveUnique(u.name));
     if (recipe.id === "anti-revive-burst" && !reviveThreat) continue;
-    const filled = fillRecipe(recipe, usable, enemyIds, seats);
-    if (filled.heroIds.length < 3) continue;
+    const filled = fillRecipe(recipe, usable, enemyIds, seats, restricted);
+    if (filled.heroIds.length < minFilled) continue;
     const wallHeroes = heroesOf(enemyIds).filter((h) => h.verified);
     const filledHeroes = filled.picks.map((p) => p.hero);
     const wallOpeners = wallHeroes.filter(isFirstCycleOpener);
@@ -1775,15 +1863,13 @@ export function recommendCounters(
       recipe.id === "outspeed-cleave" ||
       recipe.id === "strip-control" ||
       recipe.id === "turn2-control";
-    if (wallOpeners.length > 0 && race) {
-      const contest = filledHeroes.some(
-        (h) =>
-          h.roles.includes("opener") &&
-          Number.isFinite(h.baseSpeed) &&
-          (h.baseSpeed ?? 0) >= theirFast - 8,
-      );
-      if (!contest) continue;
-    }
+    const contest = filledHeroes.some(
+      (h) =>
+        h.roles.includes("opener") &&
+        Number.isFinite(h.baseSpeed) &&
+        (h.baseSpeed ?? 0) >= theirFast - 8,
+    );
+    if (wallOpeners.length > 0 && race && !contest && !restricted) continue;
     const answerable = read.watch.filter(
       (t) =>
         t.answerTags?.length ||
@@ -1801,6 +1887,7 @@ export function recommendCounters(
     let speedAdj = 0;
     if (gap >= 12 && recipe.id === "injury-vs-stall") speedAdj += 12;
     if (gap >= 12 && recipe.id === "evasion-bait" && !cannotMiss) speedAdj += 12;
+    if (restricted && wallOpeners.length > 0 && race && !contest) speedAdj -= 16;
     const score = Math.round(
       Math.min(
         99,
@@ -1823,7 +1910,7 @@ export function recommendCounters(
       seats,
       score,
       coverage: filled.coverage,
-      wincon: recipe.wincon,
+      wincon: winconFor(recipe, filledHeroes),
       setup: setupFor(filled.picks, read),
       pitfalls: pitfallsFor(filled.picks, read),
       missing: filled.missing,

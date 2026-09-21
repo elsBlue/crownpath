@@ -8,7 +8,8 @@ import { useNotices } from "@/lib/e7/notices";
 import { useArenaStore } from "@/lib/e7/store";
 import { cn } from "@/lib/utils";
 import { Brand } from "./brand";
-import { Starfield } from "./starfield";
+import { Atmosphere } from "./atmosphere";
+import { ThemeToggle } from "./theme-toggle";
 import { UpdateInbox } from "./update-inbox";
 
 const NAV = [
@@ -29,7 +30,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="relative flex h-full max-h-full flex-col overflow-hidden bg-background text-foreground">
-      <Starfield />
+      <Atmosphere />
       <header className="relative z-40 shrink-0 border-b border-border/80 bg-background/85 backdrop-blur-md">
         <div className="mx-auto flex h-16 max-w-5xl items-center justify-between gap-3 px-4 sm:px-6">
           <Link to="/" className="min-w-0">
@@ -56,6 +57,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             })}
           </nav>
           <div className="flex min-w-0 items-center gap-1">
+            <ThemeToggle />
             <UpdateInbox />
             <AccountChip />
           </div>

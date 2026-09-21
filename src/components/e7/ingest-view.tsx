@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { HeroPortrait } from "@/components/hero-portrait";
-import { EmptyNote, FilterChip, StatStrip, TOOLBAR } from "@/components/e7/chrome";
+import { EmptyNote, StatStrip } from "@/components/e7/chrome";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -23,7 +23,6 @@ function todayStamp() {
 export function IngestAdmin() {
   const heroes = useCatalog((s) => s.heroes);
   const [text, setText] = useState("");
-  const [mode, setMode] = useState<"kit" | "json">("json");
   const [checkedAt, setCheckedAt] = useState(todayStamp);
   const [drafts, setDrafts] = useState<HeroDraft[]>([]);
   const [selected, setSelected] = useState<string[]>([]);
@@ -50,7 +49,7 @@ export function IngestAdmin() {
   async function extract() {
     setBusy("extract");
     try {
-      const next = await extractKits({ data: { text, checkedAt, mode } });
+      const next = await extractKits({ data: { text, checkedAt, mode: "json" } });
       setDrafts(next.heroes);
       setSelected(next.heroes.map((d) => d.id).slice(0, BATCH_MAX));
       toast(`Loaded ${next.heroes.length}. Watch / prefer / jobFor stay SuperGrok-only.`);
@@ -88,28 +87,14 @@ export function IngestAdmin() {
         ]}
       />
       <p className="max-w-xl text-sm leading-relaxed text-muted-foreground">
-        Groq is off. Watch, prefer, tier, and jobFor come from SuperGrok in a new Crownpath chat
-        (“cek Notion verified hari ini”). Paste that draft JSON here and apply. Kit paste only fills
-        mechanical tags — it will not invent Watch. New names are added; no stub unit first. No
-        guild notice is posted from here.
+        Paste SuperGrok draft JSON (new chat: “cek Notion verified hari ini”). Watch, prefer, tier,
+        and jobFor stay SuperGrok-only. New names are added — no stub unit first. No guild notice
+        is posted from here.
       </p>
-
-      <div className={TOOLBAR}>
-        <FilterChip on={mode === "kit"} onClick={() => setMode("kit")}>
-          Journal kit
-        </FilterChip>
-        <FilterChip on={mode === "json"} onClick={() => setMode("json")}>
-          Draft JSON
-        </FilterChip>
-      </div>
       <Textarea
         value={text}
         onChange={(e) => setText(e.target.value)}
-        placeholder={
-          mode === "json"
-            ? "Paste drafts/YYYY-MM-DD.json from SuperGrok"
-            : "Paste Journal kits. Mechanical tags only — SuperGrok still fills Watch / prefer / jobFor."
-        }
+        placeholder="Paste drafts/YYYY-MM-DD.json"
         className="min-h-40"
       />
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
@@ -118,7 +103,7 @@ export function IngestAdmin() {
           <Input type="date" value={checkedAt} onChange={(e) => setCheckedAt(e.target.value)} />
         </label>
         <Button disabled={busy !== null || text.trim().length < 20} onClick={() => void extract()}>
-          {busy === "extract" ? "Loading…" : mode === "json" ? `Load JSON · max ${BATCH_MAX}` : `Parse kit · max ${BATCH_MAX}`}
+          {busy === "extract" ? "Loading…" : `Load JSON · max ${BATCH_MAX}`}
         </Button>
       </div>
 
