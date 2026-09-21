@@ -217,7 +217,7 @@ export function wallThreats(heroes: Hero[]): DraftThreat[] {
     add({
       key: "dj-basar",
       label: "DJ Basar",
-      note: "Gives the team Immunity and clears their debuffs. If he has Barrier after an enemy skill, Desert Storm inverts your Barrier into damage and cuts Combat Readiness 20%. Extra turn on Barrier is gone.",
+      note: "Cleanses the team and grants Immunity. If he has Barrier after an enemy skill, Desert Storm turns your Barrier into damage and cuts Combat Readiness 20%. He no longer extra-turns from Barrier.",
       answerTags: ["strip"],
     });
   }
@@ -1090,11 +1090,19 @@ export function wallThreats(heroes: Hero[]): DraftThreat[] {
     });
   }
 
+  if (ids.has("elena") && !ids.has("astromancer-elena")) {
+    add({
+      key: "elena-guard",
+      label: "Elena",
+      note: "When the team takes an all-ally hit, she cuts 30% of that damage. Consecrated Ground then cleanses one debuff from everyone and pushes Combat Readiness 30%.",
+    });
+  }
+
   if (ids.has("kawerik")) {
     add({
       key: "kawerik-mana",
       label: "Kawerik Field",
-      note: "Mana Field: while he has Fighting Spirit, skill damage into him is nullified (10 Fighting Spirit per hit). S2 full-pushes cooldowns and extra-turns on a crit.",
+      note: "While Mana Field is up, a skill hit into him spends 10 Fighting Spirit and deals no damage. Dimensional Corridor fully pushes cooldowns; a crit on that skill grants an extra turn.",
     });
   }
 
@@ -1136,6 +1144,7 @@ export function wallThreats(heroes: Hero[]): DraftThreat[] {
     "lethe-frost": 10,
     "krau-share": 10,
     "kawerik-mana": 10,
+    "elena-guard": 11,
     "jack-o-chiron": 10,
     "holiday-yufine": 10,
     "renoa-dirge": 10,
@@ -1271,8 +1280,8 @@ export function lineupLimitNote(
   }
   if (names.length === 0) return null;
   if (names.length === 1) {
-    return `No lineup on this list answers ${names[0]}. Refresh is a real option.`;
+    return `None of these lineups answer ${names[0]}. Skipping this defense is allowed.`;
   }
   const last = names[names.length - 1]!;
-  return `No lineup on this list answers ${names.slice(0, -1).join(", ")} or ${last}. Refresh is a real option.`;
+  return `None of these lineups answer ${names.slice(0, -1).join(", ")} or ${last}. Skipping this defense is allowed.`;
 }

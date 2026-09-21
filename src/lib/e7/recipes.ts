@@ -11,42 +11,42 @@ export const ARCHETYPE_META: Record<
 > = {
   "speed-cleave": {
     title: "Speed cleave",
-    blurb: "This wall is built to take the first turn, remove your buffs, and hit everyone.",
+    blurb: "This wall wants the first turn, strips your buffs, and hits everyone.",
     color: "cleave",
   },
   "harsetti-stall": {
     title: "Harsetti stall",
-    blurb: "Harsetti caps Speed. This wall is built for a long fight, not a race.",
+    blurb: "Speed is capped. You cannot race this wall. Plan for a long fight.",
     color: "stall",
   },
   "revive-wall": {
     title: "Revive wall",
-    blurb: "A reset is in this draft. A kill does not necessarily end the fight.",
+    blurb: "Someone on this wall can bring an ally back. Killing one unit may not end the fight.",
     color: "stall",
   },
   "injury-grind": {
     title: "Injury grind",
-    blurb: "They cut maximum Health as the fight goes on. Racing raw Health feeds them.",
+    blurb: "They cut maximum Health as the fight goes on. Extra Health does not fill what Injury removed.",
     color: "bruiser",
   },
   "evasion-counter": {
     title: "Evasion nest",
-    blurb: "This wall is built around miss chance and counters. Single-target skills into the miss core will fail often.",
+    blurb: "This wall is built around miss chance and counters. Single-target skills into the miss core fail often.",
     color: "bruiser",
   },
   "turn2-control": {
     title: "Turn-2 control",
-    blurb: "After the first cycle, this wall pulls Combat Readiness back and takes over.",
+    blurb: "After the first cycle they pull Combat Readiness back and take over the fight.",
     color: "control",
   },
   "immunity-soul": {
     title: "Immunity / soul lock",
-    blurb: "Belian turns Soulburn off. This is often paired with team Immunity from Last Rider Krau.",
+    blurb: "Soulburn does not work here. If they also sit in Immunity, strip before you land debuffs.",
     color: "control",
   },
   "bruiser-mix": {
     title: "Mixed bruiser",
-    blurb: "No single gimmick. Bulky units with mixed tools.",
+    blurb: "No single gimmick. The wall is bulky and mixes tools.",
     color: "bruiser",
   },
 };

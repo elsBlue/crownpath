@@ -521,7 +521,7 @@ function jobFor(
     case "edward-elric":
       return `${n} Rise! after you hit him while he has a debuff: strip one, a random debuff, Combat Readiness +20%. His third skill ignores damage sharing vs non-boss.`;
     case "elena":
-      return `${n} Consecrated Ground cleanses one and heals everyone after an area attack, then she takes 30% Combat Readiness. Eternally Shining Comet is Invincible and Effect Resistance.`;
+      return `${n} cuts 30% of all-ally hits. Consecrated Ground then cleanses one debuff from everyone and pushes Combat Readiness 30%. Eternally Shining Comet is Invincible and Effect Resistance.`;
     case "eligos":
       return `${n} Cloak and Trigger is resource −60%, strip two, Target and Decrease Defense, Combat Readiness −35%. Soulburn ignores Effect Resistance.`;
     case "elphelt":

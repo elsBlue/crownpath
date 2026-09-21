@@ -447,8 +447,8 @@ export function ScoutView() {
                 <span className="text-sm text-muted-foreground">Phase {gwRound}</span>
               ) : null}
               <InfoTip label="About lineups">
-                We match enemy skills to a team. Speed rolls, gear, artifacts, and exclusive
-                equipment are not included.
+                These teams are a skill fit against the wall. Speed rolls, gear, artifacts, and
+                exclusive equipment are not in the model. Not a win guarantee.
               </InfoTip>
             </div>
             {counters.length > 0 ? (
@@ -461,9 +461,9 @@ export function ScoutView() {
             <div className="flex min-w-0 items-center gap-1">
               <p className="text-sm font-medium">Only built units</p>
               <InfoTip label="About only built units">
-                On: fill from {builtVerified} built, in-game verified{" "}
-                {builtVerified === 1 ? "hero" : "heroes"}. Off: the full checked list. Unchecked
-                kits stay out.
+                On: suggestions use the {builtVerified} built, journal-checked{" "}
+                {builtVerified === 1 ? "hero" : "heroes"} on your roster. Off: the full checked
+                list. Names that are not journal-checked stay out.
               </InfoTip>
             </div>
             <Switch checked={restrict} onCheckedChange={setRestrict} />
@@ -471,8 +471,8 @@ export function ScoutView() {
           {filled.length === seats ? (
             <p className="hidden max-w-md text-sm leading-relaxed text-muted-foreground md:block">
               {restrict
-                ? "Suggested teams from units you marked built. Not a win guarantee — we do not use gear, sets, artifacts, or exclusive equipment."
-                : "Suggested teams from the full hero list. You may not own every unit. Not a win guarantee — we do not use gear, sets, artifacts, or exclusive equipment."}
+                ? "Suggested from units you marked Built. Skill fit only — gear, sets, artifacts, and exclusive equipment are not used."
+                : "Suggested from the full checked list. You may not own every unit. Skill fit only — gear, sets, artifacts, and exclusive equipment are not used."}
             </p>
           ) : null}
           {limitNote ? (
@@ -487,9 +487,9 @@ export function ScoutView() {
                 ? `Add ${remain} more ${remain === 1 ? "hero" : "heroes"} to the defense. Lineups appear when ${seats} heroes are placed.`
                 : restrict
                   ? builtVerified < seats
-                    ? `Only ${builtVerified} verified built ${builtVerified === 1 ? "hero" : "heroes"} — not enough to fill ${seats} seats. Mark more Built on Roster, or turn off Only built units.`
-                    : "No lineup from your built units for this wall yet. Refresh is a real option, or turn off Only built units."
-                  : "No lineup from the verified catalog for this wall yet. Refresh is a real option."}
+                    ? `Only ${builtVerified} journal-checked Built ${builtVerified === 1 ? "hero" : "heroes"} — not enough to fill ${seats} seats. Mark more Built on Roster, or turn off Only built units.`
+                    : "No lineup from your Built units for this wall yet. Skip the defense, or turn off Only built units."
+                  : "No lineup from the checked list for this wall yet. Skipping this defense is allowed."}
             </CardContent>
           </Card>
         ) : (
