@@ -254,25 +254,24 @@ html.light {
   }
 }
 
+@keyframes boot-shade {
+  0% {
+    opacity: 0;
+  }
+  22% {
+    opacity: 0.28;
+  }
+  72% {
+    opacity: 0.24;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
 .boot-shade {
   opacity: 0;
-  transform: translateZ(0);
-  will-change: opacity;
-  transition: opacity 0.8s var(--ease-smooth-out);
-}
-
-.boot-shade[data-phase="in"],
-.boot-shade[data-phase="hold"] {
-  opacity: 0.5;
-}
-
-.boot-shade[data-phase="out"],
-.boot-shade[data-phase="wait"] {
-  opacity: 0;
-}
-
-.boot-shade[data-phase="out"] {
-  transition: opacity 4s var(--ease-smooth-out);
+  animation: boot-shade 7s cubic-bezier(0.45, 0, 0.55, 1) both;
 }
 
 .boot-shade-media {
@@ -290,6 +289,18 @@ html.light {
 html.light .boot-shade-media {
   mix-blend-mode: multiply;
   filter: saturate(0.85) brightness(0.9);
+}
+
+.boot-media-light {
+  display: none;
+}
+
+html.light .boot-media-dark {
+  display: none;
+}
+
+html.light .boot-media-light {
+  display: block;
 }
 
 .boot-shade-veil {
@@ -324,15 +335,5 @@ html.light .boot-shade-media {
       color-mix(in oklab, var(--color-background) 28%, transparent) 72%,
       color-mix(in oklab, var(--color-background) 62%, transparent) 100%
     );
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .boot-shade {
-    transition-duration: 0.5s;
-  }
-
-  .boot-shade[data-phase="out"] {
-    transition-duration: 1.2s;
   }
 }
