@@ -1138,8 +1138,44 @@ export function wallThreats(heroes: Hero[]): DraftThreat[] {
     });
   }
 
+  if (ids.has("melissa")) {
+    add({
+      key: "melissa-curse",
+      label: "Melissa Curse",
+      note: "Blood Bloom full-strips, Curses even on a miss (later hits also hurt that unit for 60%), and she acts again. Extra turn is that skill, not turn 1. S2 is Immortality and Immunity for 1 turn; a kill resets it.",
+    });
+  }
+
+  if (ids.has("midnight-gala-lilias")) {
+    add({
+      key: "mg-lilias",
+      label: "MG Lilias",
+      note: "One attack into her cannot exceed 35% of her max Health. After she hits a unit at half Health, allies except her gain Attack and Combat Readiness, then she pushes 50%. Her third skill ignores damage reduction and damage sharing on heroes, and always crits.",
+    });
+  }
+
+  if (ids.has("milim")) {
+    add({
+      key: "milim-buster",
+      label: "Milim Focus",
+      note: "Dragon Eye strips Stealth from everyone, ignoring Effect Resistance. Full Focus after an attack hits everyone and removes 10 Souls. A kill cannot be revived. Extra turn is Soulburn only. Self evasion is not a miss nest.",
+    });
+  }
+
+  if (ids.has("perfumer-byblis")) {
+    add({
+      key: "p-byblis",
+      label: "Perfumer Byblis",
+      note: "When an ally drops to half Health she cleanses two debuffs, heals, and barriers the wall. Lingering Fragrance stacks undispellable max Health and reflects 8% of damage taken. Two Venoms injure; she detonates them at the end of her turn. Dual Attack is Soulburn only.",
+    });
+  }
+
   const rank: Record<string, number> = {
     "lua-beguile": 10,
+    "melissa-curse": 9,
+    "mg-lilias": 10,
+    "milim-buster": 11,
+    "p-byblis": 11,
     "lilias-suppression": 10,
     "lethe-frost": 10,
     "krau-share": 10,

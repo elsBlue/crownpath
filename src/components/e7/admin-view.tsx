@@ -1657,27 +1657,32 @@ function MemberAdmin() {
       <ul className={LIST}>
         {(members ?? []).map((m) => (
           <li key={m.userId}>
-            <RowCard className="flex-col items-stretch sm:flex-row sm:items-center">
+            <RowCard className="items-start">
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium">
-                  {m.ingameName || m.displayName || m.email || m.userId}
-                </p>
-                <p className="truncate text-xs text-muted-foreground">{m.email ?? m.userId}</p>
-                {owner ? (
-                  <IngameNameField member={m} onSaved={setMembers} />
-                ) : null}
+                <div className="flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium">
+                      {m.ingameName || m.displayName || m.email || m.userId}
+                    </p>
+                    <p className="truncate text-xs text-muted-foreground">{m.email ?? m.userId}</p>
+                  </div>
+                  <Button
+                    size="sm"
+                    className="h-9 shrink-0 rounded-full px-3.5"
+                    variant={m.role === "admin" ? "default" : "secondary"}
+                    disabled={
+                      busyId === m.userId ||
+                      (m.role === "admin" &&
+                        me === "admin" &&
+                        (members ?? []).filter((x) => x.role === "admin").length === 1)
+                    }
+                    onClick={() => void toggle(m)}
+                  >
+                    {m.role === "admin" ? "Admin" : "Member"}
+                  </Button>
+                </div>
+                {owner ? <IngameNameField member={m} onSaved={setMembers} /> : null}
               </div>
-              <Button
-                size="sm"
-                variant={m.role === "admin" ? "default" : "secondary"}
-                disabled={
-                  busyId === m.userId ||
-                  (m.role === "admin" && me === "admin" && (members ?? []).filter((x) => x.role === "admin").length === 1)
-                }
-                onClick={() => void toggle(m)}
-              >
-                {m.role === "admin" ? "Admin" : "Member"}
-              </Button>
             </RowCard>
           </li>
         ))}
@@ -1725,8 +1730,9 @@ function IngameNameField({
   }
 
   return (
-    <div className="mt-2 flex gap-2">
+    <div className="mt-2 flex items-center gap-2">
       <Input
+        className="h-9"
         value={value}
         maxLength={24}
         placeholder="In-game name"
@@ -1739,7 +1745,13 @@ function IngameNameField({
           }
         }}
       />
-      <Button size="sm" variant="secondary" disabled={busy} onClick={() => void save()}>
+      <Button
+        size="sm"
+        className="h-9 shrink-0 rounded-full px-3.5"
+        variant="secondary"
+        disabled={busy || value.trim() === (member.ingameName ?? "")}
+        onClick={() => void save()}
+      >
         Save
       </Button>
     </div>

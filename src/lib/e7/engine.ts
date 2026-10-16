@@ -766,6 +766,14 @@ function jobFor(
       return `${n} is an ice mage. Rekos's Blessing barriers the team; Wave of Vengeance breaks Defense and stacks her Attack.`;
     case "luna":
       return `${n} is an ice warrior. Infinity Slash shaves her own cooldowns; Ragnar Spear pens 50% with elemental advantage.`;
+    case "melissa":
+      return `${n} full-strips one unit, Curses them even on a miss (later hits also hurt them for 60%), and takes another turn. Extra turn is that skill, not turn 1. Soulburn ignores Effect Resistance.`;
+    case "midnight-gala-lilias":
+      return `${n} ignores damage reduction and damage sharing on a hero, and that hit always crits. One attack into her stops at 35% of her max Health.`;
+    case "milim":
+      return `${n} kills into Extinction and ignores damage sharing on heroes. Full Focus after an attack hits everyone and removes 10 Souls. Extra turn is Soulburn only.`;
+    case "perfumer-byblis":
+      return `${n} cleanses two debuffs, heals, and barriers the team when an ally drops to half Health. Venom injures everyone, and she detonates it the same turn. Dual Attack is Soulburn only.`;
     default:
       break;
   }

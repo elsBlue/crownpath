@@ -53,41 +53,47 @@ export function Breeze() {
     const g = ctx;
 
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const speed = reduced ? 0.45 : 1;
     let w = 0;
     let h = 0;
     let dpr = 1;
+    let pace = 1;
+    let phone = false;
     let motes: Mote[] = [];
     let leaves: Leaf[] = [];
-    let wind = 0.08;
+    let wind = 0.04;
     let gustT = 0;
     let raf = 0;
     let last = performance.now();
     let running = true;
 
+    function isPhone() {
+      return window.matchMedia("(max-width: 768px), (pointer: coarse)").matches;
+    }
+
     function seed() {
-      const nMote = Math.min(80, Math.max(28, Math.floor((w * h) / 18000)));
+      const phone = isPhone();
+      const nMote = Math.min(phone ? 48 : 80, Math.max(22, Math.floor((w * h) / (phone ? 24000 : 18000))));
       motes = Array.from({ length: nMote }, () => ({
         x: Math.random() * w,
         y: Math.random() * h,
         r: Math.random() * 1.2 + 0.4,
         a: Math.random() * 0.2 + 0.08,
-        vx: 0.04 + Math.random() * 0.06,
-        vy: (Math.random() - 0.5) * 0.02,
+        vx: (phone ? 0.018 : 0.032) + Math.random() * (phone ? 0.03 : 0.05),
+        vy: (Math.random() - 0.5) * (phone ? 0.012 : 0.02),
       }));
-      const nLeaf = Math.min(28, Math.max(14, Math.floor((w * h) / 70000)));
+      const nLeaf = Math.min(phone ? 16 : 28, Math.max(phone ? 8 : 14, Math.floor((w * h) / (phone ? 110000 : 70000))));
       leaves = Array.from({ length: nLeaf }, () => ({
         x: Math.random() * w,
         y: Math.random() * h,
-        s: 7 + Math.random() * 9,
+        s: (phone ? 6 : 7) + Math.random() * (phone ? 7 : 9),
         rot: Math.random() * Math.PI * 2,
-        spin: (Math.random() < 0.5 ? -1 : 1) * (0.0022 + Math.random() * 0.0035),
-        vx: 0.055 + Math.random() * 0.08,
-        vy: 0.028 + Math.random() * 0.045,
+        spin: (Math.random() < 0.5 ? -1 : 1) * ((phone ? 0.0012 : 0.002) + Math.random() * (phone ? 0.002 : 0.003)),
+        vx: (phone ? 0.022 : 0.04) + Math.random() * (phone ? 0.03 : 0.055),
+        vy: (phone ? 0.012 : 0.022) + Math.random() * (phone ? 0.018 : 0.032),
         sway: Math.random() * Math.PI * 2,
-        swaySp: 0.0014 + Math.random() * 0.0022,
+        swaySp: (phone ? 0.0008 : 0.0012) + Math.random() * (phone ? 0.0012 : 0.0018),
         hue: 72 + Math.random() * 48,
-        alpha: 0.28 + Math.random() * 0.16,
+        alpha: 0.26 + Math.random() * 0.14,
       }));
     }
 
@@ -100,6 +106,8 @@ export function Breeze() {
       canvas.style.width = `${w}px`;
       canvas.style.height = `${h}px`;
       g.setTransform(dpr, 0, 0, dpr, 0, 0);
+      phone = isPhone();
+      pace = reduced ? 0.38 : phone ? 0.48 : 0.82;
       seed();
     }
 
@@ -117,11 +125,14 @@ export function Breeze() {
       g.clearRect(0, 0, w, h);
 
       gustT += dt;
-      wind = 0.07 + 0.05 * Math.sin(gustT / 1800) + 0.025 * Math.sin(gustT / 430);
+      wind =
+        (phone ? 0.028 : 0.048) +
+        (phone ? 0.018 : 0.032) * Math.sin(gustT / (phone ? 2800 : 2000)) +
+        (phone ? 0.01 : 0.018) * Math.sin(gustT / (phone ? 720 : 520));
 
       for (const m of motes) {
-        m.x += (m.vx + wind) * dt * speed;
-        m.y += m.vy * dt * speed;
+        m.x += (m.vx + wind) * dt * pace;
+        m.y += m.vy * dt * pace;
         wrap(m, 12);
         g.fillStyle = `rgba(255, 252, 245, ${m.a})`;
         g.beginPath();
@@ -130,10 +141,10 @@ export function Breeze() {
       }
 
       for (const leaf of leaves) {
-        leaf.sway += leaf.swaySp * dt * speed;
-        leaf.x += (leaf.vx + wind * 1.6 + Math.sin(leaf.sway) * 0.09) * dt * speed;
-        leaf.y += (leaf.vy + Math.cos(leaf.sway * 0.7) * 0.03) * dt * speed;
-        leaf.rot += (leaf.spin + Math.sin(leaf.sway) * 0.0012) * dt * speed;
+        leaf.sway += leaf.swaySp * dt * pace;
+        leaf.x += (leaf.vx + wind * (phone ? 1.15 : 1.35) + Math.sin(leaf.sway) * 0.06) * dt * pace;
+        leaf.y += (leaf.vy + Math.cos(leaf.sway * 0.7) * 0.02) * dt * pace;
+        leaf.rot += (leaf.spin + Math.sin(leaf.sway) * 0.0008) * dt * pace;
         wrap(leaf, 28);
         paintLeaf(g, leaf.x, leaf.y, leaf.s, leaf.rot, leaf.hue, leaf.alpha);
       }
