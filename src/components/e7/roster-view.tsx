@@ -85,7 +85,7 @@ export function RosterView() {
 
   return (
     <div className={cn(PAGE, jumpItems.length > 1 && "pr-8 xl:pr-0")}>
-      <PageHeader kicker="Roster" title="Your roster">
+      <PageHeader kicker="Heroes" title="Your heroes">
         Tap a name for the kit loadout. Built is what Scout uses when Only built units is on.
       </PageHeader>
 

@@ -487,7 +487,7 @@ export function ScoutView() {
                 ? `Add ${remain} more ${remain === 1 ? "hero" : "heroes"} to the defense. Lineups appear when ${seats} heroes are placed.`
                 : restrict
                   ? builtVerified < seats
-                    ? `Only ${builtVerified} journal-checked Built ${builtVerified === 1 ? "hero" : "heroes"} — not enough to fill ${seats} seats. Mark more Built on Roster, or turn off Only built units.`
+                    ? `Only ${builtVerified} journal-checked Built ${builtVerified === 1 ? "hero" : "heroes"} — not enough to fill ${seats} seats. Mark more Built on Heroes, or turn off Only built units.`
                     : "No lineup from your Built units for this wall yet. Skip the defense, or turn off Only built units."
                   : "No lineup from the checked list for this wall yet. Skipping this defense is allowed."}
             </CardContent>

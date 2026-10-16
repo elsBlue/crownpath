@@ -105,7 +105,7 @@ export function CounterCard({
         {team.theorycraft ? (
           <Badge variant="outline">Catalog</Badge>
         ) : (
-          <Badge variant="steel">Your roster</Badge>
+          <Badge variant="steel">Your heroes</Badge>
         )}
         {team.missing.map((m) => (
           <Badge key={m} variant="loss">

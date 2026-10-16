@@ -79,7 +79,7 @@ export function BoardView() {
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-xs font-medium tracking-[0.18em] text-muted-foreground uppercase">
-          Board
+          Defense Board
         </p>
         <div className="flex rounded-full bg-secondary p-1">
           {(

@@ -14,8 +14,8 @@ import { UpdateInbox } from "./update-inbox";
 
 const NAV = [
   { to: "/", label: "Scout", icon: Crosshair },
-  { to: "/board", label: "Board", icon: LayoutGrid },
-  { to: "/roster", label: "Roster", icon: Users },
+  { to: "/board", label: "Defense Board", icon: LayoutGrid },
+  { to: "/roster", label: "Heroes", icon: Users },
 ] as const;
 
 export function AppShell({ children }: { children: ReactNode }) {
@@ -81,7 +81,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 key={item.to}
                 to={item.to}
                 className={cn(
-                  "flex min-h-11 flex-col items-center justify-center gap-0.5 text-xs tracking-wide",
+                  "flex min-h-11 flex-col items-center justify-center gap-0.5 px-0.5 text-center text-[11px] leading-tight tracking-wide",
                   active ? "text-foreground" : "text-muted-foreground",
                 )}
               >
