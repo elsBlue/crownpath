@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Crosshair, LogOut, Settings2, Users } from "lucide-react";
+import { Crosshair, LayoutGrid, LogOut, Settings2, Users } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { signOut } from "@/lib/auth/client";
 import { useCurrentUser } from "@/lib/auth/use-current-user";
@@ -14,6 +14,7 @@ import { UpdateInbox } from "./update-inbox";
 
 const NAV = [
   { to: "/", label: "Scout", icon: Crosshair },
+  { to: "/board", label: "Board", icon: LayoutGrid },
   { to: "/roster", label: "Roster", icon: Users },
 ] as const;
 
@@ -72,7 +73,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         className="relative z-40 shrink-0 border-t border-border/80 bg-background/90 backdrop-blur-md md:hidden"
         style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       >
-        <div className={cn("grid h-14", items.length === 3 ? "grid-cols-3" : "grid-cols-2")}>
+        <div className={cn("grid h-14", items.length >= 4 ? "grid-cols-4" : items.length === 3 ? "grid-cols-3" : "grid-cols-2")}>
           {items.map((item) => {
             const active = pathname === item.to || (item.to !== "/" && pathname.startsWith(item.to));
             return (

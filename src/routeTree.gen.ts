@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminRouteImport } from './routes/admin'
+import { Route as BoardRouteImport } from './routes/board'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as RosterRouteImport } from './routes/roster'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
@@ -23,6 +24,11 @@ const IndexRoute = IndexRouteImport.update({
 const AdminRoute = AdminRouteImport.update({
   id: '/admin',
   path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BoardRoute = BoardRouteImport.update({
+  id: '/board',
+  path: '/board',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -44,6 +50,7 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/board': typeof BoardRoute
   '/login': typeof LoginRoute
   '/roster': typeof RosterRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -51,6 +58,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/board': typeof BoardRoute
   '/login': typeof LoginRoute
   '/roster': typeof RosterRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -59,21 +67,30 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/board': typeof BoardRoute
   '/login': typeof LoginRoute
   '/roster': typeof RosterRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/admin' | '/login' | '/roster' | '/api/auth/$'
+  fullPaths: '/' | '/admin' | '/board' | '/login' | '/roster' | '/api/auth/$'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/admin' | '/login' | '/roster' | '/api/auth/$'
-  id: '__root__' | '/' | '/admin' | '/login' | '/roster' | '/api/auth/$'
+  to: '/' | '/admin' | '/board' | '/login' | '/roster' | '/api/auth/$'
+  id:
+    | '__root__'
+    | '/'
+    | '/admin'
+    | '/board'
+    | '/login'
+    | '/roster'
+    | '/api/auth/$'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRoute
+  BoardRoute: typeof BoardRoute
   LoginRoute: typeof LoginRoute
   RosterRoute: typeof RosterRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
@@ -93,6 +110,13 @@ declare module '@tanstack/react-router' {
       path: '/admin'
       fullPath: '/admin'
       preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/board': {
+      id: '/board'
+      path: '/board'
+      fullPath: '/board'
+      preLoaderRoute: typeof BoardRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -122,6 +146,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
+  BoardRoute: BoardRoute,
   LoginRoute: LoginRoute,
   RosterRoute: RosterRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
